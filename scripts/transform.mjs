@@ -129,8 +129,11 @@ async function processVibeCode(
 async function runPipeline() {
   const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src')
   const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components')
-  const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks') // Unser neuer Blocks-Ordner
-  const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts') // Der Pfad zur Pages.ts
+  const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks')
+  const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts')
+
+  // NEU: Diese Zeile hat gefehlt!
+  const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx')
 
   try {
     console.log(`Durchsuche Ordner: ${INPUT_DIR}`)
