@@ -87,15 +87,15 @@ async function updatePayloadConfig(configPath, collectionName) {
 }
 
 // --- HAUPTFUNKTION: VIBE TO PRODUCTION ---
-
 async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, payloadConfigPath) {
   try {
+    // 1. Deklaration (Hier ist sie richtig)
     const componentName = path.basename(inputFilePath, path.extname(inputFilePath));
     console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`);
     
     const vibeCode = await fs.readFile(inputFilePath, 'utf-8');
 
-    // NEU: Den Platzhalter im Prompt durch den echten Namen ersetzen!
+    // Den Platzhalter im Prompt durch den echten Namen ersetzen
     const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName);
 
     console.log('🧠 Sende Prompts an Gemini...');
@@ -105,7 +105,7 @@ async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputP
       model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`)
     ]);
 
-    // Clean-up: Markdown Code-Blöcke entfernen, falls die KI sie trotz Anweisung mitschickt
+    // Clean-up: Markdown Code-Blöcke entfernen
     const cleanCode = (text) =>
       text
         .replace(/```(tsx|typescript|javascript|js|jsx)?/gi, '')
@@ -127,7 +127,7 @@ async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputP
     console.log(`✅ Backend (Payload) gespeichert unter: ${backendOutputPath}`)
 
     // Payload Config updaten
-    const componentName = path.basename(inputFilePath, path.extname(inputFilePath))
+    // HIER WURDE DIE DOPPELTE ZEILE ENTFERNT. Wir nutzen einfach das 'componentName' von ganz oben!
     await updatePayloadConfig(payloadConfigPath, componentName)
 
     console.log(`\n🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
