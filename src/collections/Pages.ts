@@ -1,12 +1,10 @@
-import { CollectionConfig } from 'payload'
+// src/collections/Pages.ts
+import type { CollectionConfig } from 'payload'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: {
     useAsTitle: 'title',
-  },
-  access: {
-    read: () => true,
   },
   fields: [
     {
@@ -15,17 +13,11 @@ export const Pages: CollectionConfig = {
       required: true,
     },
     {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      index: true,
-      admin: {
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'content',
-      type: 'richText',
+      name: 'layout', // Hier landen unsere Vibe-Komponenten!
+      type: 'blocks',
+      blocks: [
+        // Die Pipeline injiziert hier automatisch die neuen Blocks, z.B. App, HeroSection...
+      ],
     },
   ],
 }
