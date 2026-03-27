@@ -137,38 +137,41 @@ async function processVibeCode(
 // --- AUSFÜHRUNG: DYNAMISCHER BATCH-PROZESS ---
 
 async function runPipeline() {
-  // Die Basis-Pfade
-  const INPUT_DIR = './vibe-drafts'
-  const FRONTEND_DIR = './src/app/components'
-  const BACKEND_DIR = './src/payload/collections'
-  const PAYLOAD_CONFIG = './src/payload.config.ts'
+// ... (oberer Code bleibt gleich) ...
 
-  try {
-    // 1. Lese alle Dateien im Input-Ordner
-    const files = await fs.readdir(INPUT_DIR)
+async function runPipeline() {
+    // ACHTUNG: Nutze path.resolve für absolut sichere Pfade in Pipelines!
+    const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src'); 
+    const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components');
+    const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
+    const PAYLOAD_CONFIG = path.resolve(process.cwd(), './src/payload.config.ts');
 
-    // 2. Filtere nur die relevanten React-Dateien heraus
-    const reactFiles = files.filter((file) => file.endsWith('.jsx') || file.endsWith('.tsx'))
+    try {
+        console.log(`Durchsuche Ordner: ${INPUT_DIR}`);
+        
+        // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
+        const files = await fs.readdir(INPUT_DIR, { recursive: true });
+        
+        // Filtere alle Dateien heraus, die auf .jsx oder .tsx enden
+        const reactFiles = files.filter(file => file.endsWith('.jsx') || file.endsWith('.tsx'));
 
-    if (reactFiles.length === 0) {
-      console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.')
-      return
-    }
+        if (reactFiles.length === 0) {
+            console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.');
+            return;
+        }
 
-    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`)
+        console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`);
 
-    // 3. Loop durch jede gefundene Datei und jage sie durch die KI-Pipeline
-    for (const file of reactFiles) {
-      const componentName = path.basename(file, path.extname(file))
+        for (const file of reactFiles) {
+            // "file" kann jetzt z.B. "components/Hero.jsx" sein. Wir holen uns den reinen Namen:
+            const componentName = path.basename(file, path.extname(file));
+            
+            const inputFilePath = path.join(INPUT_DIR, file);
+            const frontendOutputPath = path.join(FRONTEND_DIR, `${componentName}.tsx`);
+            const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`);
 
-      const inputFilePath = path.join(INPUT_DIR, file)
-      const frontendOutputPath = path.join(FRONTEND_DIR, `${componentName}.tsx`)
-      const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`)
-
-      // Warten, bis eine Komponente fertig ist, bevor die nächste startet
-      // (Verhindert Rate-Limits bei der Gemini API)
-      await processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, PAYLOAD_CONFIG)
-    }
+            await processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, PAYLOAD_CONFIG);
+        }
 
     console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.')
   } catch (error) {
