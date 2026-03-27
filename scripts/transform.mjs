@@ -26,66 +26,49 @@ Konvertiere den Code zu 100% in Material UI (MUI).
 
 const SYSTEM_PROMPT_BACKEND = `
 Du bist ein Senior Backend Engineer, spezialisiert auf Payload CMS (TypeScript).
-Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS Collection Konfiguration.
+Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS BLOCK Konfiguration (NICHT Collection!).
 
 Regeln:
 1. Nutze die korrekten Payload-Feldtypen (text, textarea, upload, etc.).
-2. Setze sinnvolle Slugs.
-3. WICHTIG: Exportiere die Collection EXAKT so: 
-export const [COMPONENT_NAME]: CollectionConfig = { ... }
-4. Gib NUR den reinen TypeScript-Code zurück.
+2. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]' (camelCase, z.B. heroSection).
+3. WICHTIG: Exportiere den Block EXAKT so: 
+export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...] }
+4. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen.
 `;
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
 
-async function updatePayloadConfig(configPath, collectionName) {
+async function updatePagesCollection(pagesPath, blockName) {
   try {
-    console.log(`🔌 Webe ${collectionName} in payload.config.ts ein...`)
-    let configContent = await fs.readFile(configPath, 'utf-8')
+    console.log(`🔌 Webe Block ${blockName} in Pages.ts ein...`);
+    let content = await fs.readFile(pagesPath, 'utf-8');
 
-    // 1. Idempotenz-Check
-    if (configContent.includes(`import { ${collectionName} }`)) {
-      console.log(`⚠️  ${collectionName} ist bereits registriert. Überspringe Update.`)
-      return
+    if (content.includes(`import { ${blockName} }`)) {
+      console.log(`⚠️  ${blockName} ist bereits registriert.`);
+      return;
     }
 
-    // 2. Den Import hinzufügen
-    const importStatement = `import { ${collectionName} } from './collections/${collectionName}';\n`
-    const lastImportIndex = configContent.lastIndexOf('import ')
+    // Import hinzufügen
+    const importStatement = `import { ${blockName} } from '../blocks/${blockName}';\n`;
+    content = importStatement + content;
 
-    if (lastImportIndex !== -1) {
-      const endOfLastImport = configContent.indexOf('\n', lastImportIndex) + 1
-      configContent =
-        configContent.slice(0, endOfLastImport) +
-        importStatement +
-        configContent.slice(endOfLastImport)
-    } else {
-      configContent = importStatement + configContent
-    }
-
-    // 3. Die Collection ins Array pushen
-    const collectionsRegex = /collections:\s*\[/g
-    const match = collectionsRegex.exec(configContent)
+    // Block ins layout Array pushen
+    // Wir nehmen an, dass es in Pages.ts ein Feld namens 'layout' vom Typ 'blocks' gibt.
+    const blocksRegex = /blocks:\s*\[/g;
+    const match = blocksRegex.exec(content);
 
     if (match) {
-      const insertPos = match.index + match[0].length
-      configContent =
-        configContent.slice(0, insertPos) +
-        `\n    ${collectionName},` +
-        configContent.slice(insertPos)
+      const insertPos = match.index + match[0].length;
+      content = content.slice(0, insertPos) + `\n        ${blockName},` + content.slice(insertPos);
+      await fs.writeFile(pagesPath, content);
+      console.log(`✅ ${blockName} erfolgreich in Pages.ts registriert!`);
     } else {
-      console.error("❌ Konnte das 'collections' Array in der config nicht finden!")
-      return
+      console.error("❌ Konnte das 'blocks' Array in Pages.ts nicht finden!");
     }
-
-    // 4. Datei speichern
-    await fs.writeFile(configPath, configContent)
-    console.log(`✅ ${collectionName} erfolgreich in payload.config.ts registriert!`)
   } catch (error) {
-    console.error('❌ Fehler beim Aktualisieren der payload.config.ts:', error)
+    console.error('❌ Fehler beim Aktualisieren der Pages.ts:', error);
   }
 }
-
 // --- HAUPTFUNKTION: VIBE TO PRODUCTION ---
 async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, payloadConfigPath) {
   try {
@@ -126,9 +109,11 @@ async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputP
     console.log(`✅ Frontend (MUI) gespeichert unter: ${frontendOutputPath}`)
     console.log(`✅ Backend (Payload) gespeichert unter: ${backendOutputPath}`)
 
-    // Payload Config updaten
-    // HIER WURDE DIE DOPPELTE ZEILE ENTFERNT. Wir nutzen einfach das 'componentName' von ganz oben!
-    await updatePayloadConfig(payloadConfigPath, componentName)
+
+    // ... in processVibeCode ...
+    // VORHER: await updatePayloadConfig(...)
+    // NEU: Wir updaten die Pages Collection
+    await updatePagesCollection(PAGES_COLLECTION_PATH, componentName);
 
     console.log(`\n🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
   } catch (error) {
@@ -143,7 +128,9 @@ async function runPipeline() {
   const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src'); 
   const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components');
   // Vorher: const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
-  const BACKEND_DIR = path.resolve(process.cwd(), './src/collections'); // <-- DAS IST DER FIX!
+const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks'); 
+const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts');
+
   const PAYLOAD_CONFIG = path.resolve(process.cwd(), './src/payload.config.ts');
   const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx');
 
