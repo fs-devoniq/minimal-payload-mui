@@ -15,11 +15,14 @@ const model = genAI.getGenerativeModel({
 // --- PROMPTS ---
 
 const SYSTEM_PROMPT_FRONTEND = `
-Du bist ein Senior Frontend Engineer. Konvertiere die folgende React/Tailwind Komponente in eine Next.js (App Router) Komponente.
-Nutze ausschließlich Material-UI (MUI) und das 'sx' Prop für das Styling. Entferne jegliches Tailwind.
-Achte darauf, dass die Komponente flexibel ist und Props für dynamische Inhalte (Texte, Bilder) entgegennehmen kann.
-Gib NUR den reinen TypeScript-Code zurück. Keine Markdown-Formatierung (\`\`\`).
-`
+Du bist ein Senior Frontend Engineer. 
+WICHTIG: Erstelle eine Next.js Client Komponente ('use client').
+Konvertiere den Code zu 100% in Material UI (MUI).
+1. Nutze Container, Grid, Box, Typography, Button von @mui/material.
+2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop oder entsprechende MUI-Komponenten ersetzt werden.
+3. Stelle sicher, dass ALLE MUI-Komponenten oben korrekt importiert werden.
+4. Gib NUR den Code aus.
+`;
 
 const SYSTEM_PROMPT_BACKEND = `
 Du bist ein Senior Backend Engineer, spezialisiert auf Payload CMS (TypeScript).
