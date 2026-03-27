@@ -8,8 +8,8 @@ dotenv.config()
 // Initialisiere Gemini (Wir nutzen 1.5 Pro für komplexe Code-Generierung)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({
-  model: 'gemini-1.5-pro',
-  generationConfig: { temperature: 0.1 }, // Deterministisch bleiben für Code
+  model: 'gemini-1.5-pro-latest', // <-- Einfach das '-latest' dranhängen
+  generationConfig: { temperature: 0.1 },
 })
 
 // --- PROMPTS ---
