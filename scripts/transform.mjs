@@ -8,7 +8,7 @@ dotenv.config()
 // Initialisiere Gemini (Wir nutzen 1.5 Pro für komplexe Code-Generierung)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({
-  model: 'gemini-3.1-pro-preview', 
+  model: 'gemini-3.1-pro-preview',
   generationConfig: { temperature: 0.1 },
 })
 
@@ -22,7 +22,7 @@ Konvertiere den Code zu 100% in Material UI (MUI).
 2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop oder entsprechende MUI-Komponenten ersetzt werden.
 3. Stelle sicher, dass ALLE MUI-Komponenten oben korrekt importiert werden.
 4. Gib NUR den Code aus.
-`;
+`
 
 const SYSTEM_PROMPT_BACKEND = `
 Du bist ein Senior Backend Engineer, spezialisiert auf Payload CMS (TypeScript).
@@ -34,59 +34,63 @@ Regeln:
 3. WICHTIG: Exportiere den Block EXAKT so: 
 export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...] }
 4. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen.
-`;
+`
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
 
 async function updatePagesCollection(pagesPath, blockName) {
   try {
-    console.log(`🔌 Webe Block ${blockName} in Pages.ts ein...`);
-    let content = await fs.readFile(pagesPath, 'utf-8');
+    console.log(`🔌 Webe Block ${blockName} in Pages.ts ein...`)
+    let content = await fs.readFile(pagesPath, 'utf-8')
 
     if (content.includes(`import { ${blockName} }`)) {
-      console.log(`⚠️  ${blockName} ist bereits registriert.`);
-      return;
+      console.log(`⚠️  ${blockName} ist bereits registriert.`)
+      return
     }
 
     // Import hinzufügen
-    const importStatement = `import { ${blockName} } from '../blocks/${blockName}';\n`;
-    content = importStatement + content;
+    const importStatement = `import { ${blockName} } from '../blocks/${blockName}';\n`
+    content = importStatement + content
 
     // Block ins layout Array pushen
     // Wir nehmen an, dass es in Pages.ts ein Feld namens 'layout' vom Typ 'blocks' gibt.
-    const blocksRegex = /blocks:\s*\[/g;
-    const match = blocksRegex.exec(content);
+    const blocksRegex = /blocks:\s*\[/g
+    const match = blocksRegex.exec(content)
 
     if (match) {
-      const insertPos = match.index + match[0].length;
-      content = content.slice(0, insertPos) + `\n        ${blockName},` + content.slice(insertPos);
-      await fs.writeFile(pagesPath, content);
-      console.log(`✅ ${blockName} erfolgreich in Pages.ts registriert!`);
+      const insertPos = match.index + match[0].length
+      content = content.slice(0, insertPos) + `\n        ${blockName},` + content.slice(insertPos)
+      await fs.writeFile(pagesPath, content)
+      console.log(`✅ ${blockName} erfolgreich in Pages.ts registriert!`)
     } else {
-      console.error("❌ Konnte das 'blocks' Array in Pages.ts nicht finden!");
+      console.error("❌ Konnte das 'blocks' Array in Pages.ts nicht finden!")
     }
   } catch (error) {
-    console.error('❌ Fehler beim Aktualisieren der Pages.ts:', error);
+    console.error('❌ Fehler beim Aktualisieren der Pages.ts:', error)
   }
 }
 // --- HAUPTFUNKTION: VIBE TO PRODUCTION ---
-async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, payloadConfigPath) {
+async function processVibeCode(
+  inputFilePath,
+  frontendOutputPath,
+  backendOutputPath,
+  pagesCollectionPath,
+) {
   try {
-    // 1. Deklaration (Hier ist sie richtig)
-    const componentName = path.basename(inputFilePath, path.extname(inputFilePath));
-    console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`);
-    
-    const vibeCode = await fs.readFile(inputFilePath, 'utf-8');
+    const componentName = path.basename(inputFilePath, path.extname(inputFilePath))
+    console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`)
+
+    const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
 
     // Den Platzhalter im Prompt durch den echten Namen ersetzen
-    const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName);
+    const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName)
 
-    console.log('🧠 Sende Prompts an Gemini...');
-    
+    console.log('🧠 Sende Prompts an Gemini...')
+
     const [frontendResult, backendResult] = await Promise.all([
       model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
-      model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`)
-    ]);
+      model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`),
+    ])
 
     // Clean-up: Markdown Code-Blöcke entfernen
     const cleanCode = (text) =>
@@ -109,11 +113,10 @@ async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputP
     console.log(`✅ Frontend (MUI) gespeichert unter: ${frontendOutputPath}`)
     console.log(`✅ Backend (Payload) gespeichert unter: ${backendOutputPath}`)
 
-
     // ... in processVibeCode ...
     // VORHER: await updatePayloadConfig(...)
     // NEU: Wir updaten die Pages Collection
-    await updatePagesCollection(PAGES_COLLECTION_PATH, componentName);
+    await updatePagesCollection(pagesCollectionPath, componentName)
 
     console.log(`\n🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
   } catch (error) {
@@ -124,74 +127,75 @@ async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputP
 // --- AUSFÜHRUNG: DYNAMISCHER BATCH-PROZESS ---
 
 async function runPipeline() {
-  // ACHTUNG: Nutze path.resolve für absolut sichere Pfade in Pipelines!
-  const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src'); 
-  const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components');
-  // Vorher: const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
-const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks'); 
-const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts');
-
-  const PAYLOAD_CONFIG = path.resolve(process.cwd(), './src/payload.config.ts');
-  const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx');
+  const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src')
+  const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components')
+  const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks') // Unser neuer Blocks-Ordner
+  const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts') // Der Pfad zur Pages.ts
 
   try {
-    console.log(`Durchsuche Ordner: ${INPUT_DIR}`);
-    
-    // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
-    const files = await fs.readdir(INPUT_DIR, { recursive: true });
-    
-    // In der runPipeline Funktion:
-    const reactFiles = files.filter(file => {
-      const name = path.basename(file).toLowerCase();
-      return (file.endsWith('.jsx') || file.endsWith('.tsx')) && 
-             !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name);
-    });
+    console.log(`Durchsuche Ordner: ${INPUT_DIR}`)
 
-// Um "App" in Payload zu vermeiden, wenn du willst, dass es nur echte Sektionen sind:
-// Filtere 'App' ebenfalls aus, falls AI Studio alles in die App.tsx schreibt, 
-// nenne die Datei in AI Studio lieber 'Hero.tsx' vor dem Sync.
+    // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
+    const files = await fs.readdir(INPUT_DIR, { recursive: true })
+
+    // In der runPipeline Funktion:
+    const reactFiles = files.filter((file) => {
+      const name = path.basename(file).toLowerCase()
+      return (
+        (file.endsWith('.jsx') || file.endsWith('.tsx')) &&
+        !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name)
+      )
+    })
+
+    // Um "App" in Payload zu vermeiden, wenn du willst, dass es nur echte Sektionen sind:
+    // Filtere 'App' ebenfalls aus, falls AI Studio alles in die App.tsx schreibt,
+    // nenne die Datei in AI Studio lieber 'Hero.tsx' vor dem Sync.
 
     if (reactFiles.length === 0) {
-      console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.');
-      return;
+      console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.')
+      return
     }
 
-    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`);
+    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`)
 
     for (const file of reactFiles) {
-      // "file" kann jetzt z.B. "components/Hero.jsx" sein. Wir holen uns den reinen Namen:
-      const componentName = path.basename(file, path.extname(file));
-      
-      const inputFilePath = path.join(INPUT_DIR, file);
-      const frontendOutputPath = path.join(FRONTEND_DIR, `${componentName}.tsx`);
-      const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`);
+      const componentName = path.basename(file, path.extname(file))
 
-      await processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, PAYLOAD_CONFIG);
-// ... (Ende der for...of Schleife) ...
-        }
+      const inputFilePath = path.join(INPUT_DIR, file)
+      const frontendOutputPath = path.join(FRONTEND_DIR, `${componentName}.tsx`)
+      const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`)
 
-        // --- NEU: AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
-        // Wir bauen eine Next.js Page, die die generierten Komponenten anzeigt.
-        // Wir ignorieren 'main', da es nur die Vite-Setup Datei ist.
-        const componentsToDisplay = reactFiles
-            .map(file => path.basename(file, path.extname(file)))
-            .filter(name => name !== 'main');
+      // HIER ist die entscheidende Änderung: Wir übergeben PAGES_COLLECTION_PATH als 4. Parameter!
+      await processVibeCode(
+        inputFilePath,
+        frontendOutputPath,
+        backendOutputPath,
+        PAGES_COLLECTION_PATH,
+      )
+    }
 
-        if (componentsToDisplay.length > 0) {
-            console.log(`\n🏗️  Baue Next.js Frontend Page mit ${componentsToDisplay.length} Komponenten...`);
+    // --- NEU: AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
+    // Wir bauen eine Next.js Page, die die generierten Komponenten anzeigt.
+    // Wir ignorieren 'main', da es nur die Vite-Setup Datei ist.
+    const componentsToDisplay = reactFiles
+      .map((file) => path.basename(file, path.extname(file)))
+      .filter((name) => name !== 'main')
 
-            // 1. Die Imports generieren
-            const importStatements = componentsToDisplay
-                .map(name => `import ${name} from '@/app/components/${name}';`)
-                .join('\n');
+    if (componentsToDisplay.length > 0) {
+      console.log(
+        `\n🏗️  Baue Next.js Frontend Page mit ${componentsToDisplay.length} Komponenten...`,
+      )
 
-            // 2. Die Komponenten im JSX-Tree generieren
-            const componentJsx = componentsToDisplay
-                .map(name => `<${name} />`)
-                .join('\n      ');
+      // 1. Die Imports generieren
+      const importStatements = componentsToDisplay
+        .map((name) => `import ${name} from '@/app/components/${name}';`)
+        .join('\n')
 
-            // 3. Der komplette Datei-Inhalt
-            const pageContent = `
+      // 2. Die Komponenten im JSX-Tree generieren
+      const componentJsx = componentsToDisplay.map((name) => `<${name} />`).join('\n      ')
+
+      // 3. Der komplette Datei-Inhalt
+      const pageContent = `
 import React from 'react';
 ${importStatements}
 import { Box } from '@mui/material';
@@ -203,26 +207,25 @@ export default function VibePage() {
     </Box>
   );
 }
-`;
+`
 
-            // 4. Die Datei schreiben (und die alte Welcome-Page überschreiben!)
-            await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim());
-            console.log(`✅ Next.js Page erfolgreich zusammengebaut unter: ${NEXTJS_PAGE_PATH}`);
-        } else {
-            console.log('\n🤷‍♂️ Keine Komponenten zum Anzeigen gefunden (außer vielleicht "main").');
-        }
+      // 4. Die Datei schreiben (und die alte Welcome-Page überschreiben!)
+      await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim())
+      console.log(`✅ Next.js Page erfolgreich zusammengebaut unter: ${NEXTJS_PAGE_PATH}`)
+    } else {
+      console.log('\n🤷‍♂️ Keine Komponenten zum Anzeigen gefunden (außer vielleicht "main").')
+    }
 
-        console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.');
-
+    console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.')
   } catch (error) {
     // Falls der Ordner gar nicht existiert
     if (error.code === 'ENOENT') {
-      console.error(`❌ Ordner '${INPUT_DIR}' nicht gefunden. Hast du Code gepusht?`);
+      console.error(`❌ Ordner '${INPUT_DIR}' nicht gefunden. Hast du Code gepusht?`)
     } else {
-      console.error('❌ Fehler beim Lesen des Ordners:', error);
+      console.error('❌ Fehler beim Lesen des Ordners:', error)
     }
   }
 }
 
 // Starte den Batch-Prozess
-runPipeline();
+runPipeline()
