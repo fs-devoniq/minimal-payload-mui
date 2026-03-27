@@ -15,12 +15,14 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
-    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "vibe": "node scripts/transform.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@google/generative-ai": "^0.24.1",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "@mui/material-nextjs": "^7.3.7",
@@ -30,7 +32,7 @@
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/ui": "3.80.0",
     "cross-env": "^7.0.3",
-    "dotenv": "16.4.7",
+    "dotenv": "^17.3.1",
     "graphql": "^16.8.1",
     "motion": "^12.26.2",
     "next": "16.2.1",
