@@ -150,8 +150,16 @@ async function runPipeline() {
     // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
     const files = await fs.readdir(INPUT_DIR, { recursive: true });
     
-    // Filtere alle Dateien heraus, die auf .jsx oder .tsx enden
-    const reactFiles = files.filter(file => file.endsWith('.jsx') || file.endsWith('.tsx'));
+// In der runPipeline Funktion:
+const reactFiles = files.filter(file => {
+  const name = path.basename(file).toLowerCase();
+  return (file.endsWith('.jsx') || file.endsWith('.tsx')) && 
+         !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name);
+});
+
+// Um "App" in Payload zu vermeiden, wenn du willst, dass es nur echte Sektionen sind:
+// Filtere 'App' ebenfalls aus, falls AI Studio alles in die App.tsx schreibt, 
+// nenne die Datei in AI Studio lieber 'Hero.tsx' vor dem Sync.
 
     if (reactFiles.length === 0) {
       console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.');
