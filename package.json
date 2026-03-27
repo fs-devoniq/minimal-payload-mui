@@ -24,7 +24,9 @@
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
     "@mui/material-nextjs": "^7.3.7",
+    "@payloadcms/db-postgres": "3.80.0",
     "@payloadcms/next": "3.80.0",
+    "@payloadcms/plugin-seo": "^3.80.0",
     "@payloadcms/richtext-lexical": "3.80.0",
     "@payloadcms/ui": "3.80.0",
     "cross-env": "^7.0.3",
@@ -35,8 +37,7 @@
     "payload": "3.80.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sharp": "0.34.2",
-    "@payloadcms/db-postgres": "3.80.0"
+    "sharp": "0.34.2"
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
