@@ -142,6 +142,7 @@ async function runPipeline() {
   const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components');
   const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
   const PAYLOAD_CONFIG = path.resolve(process.cwd(), './src/payload.config.ts');
+  const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx');
 
   try {
     console.log(`Durchsuche Ordner: ${INPUT_DIR}`);
@@ -168,9 +169,53 @@ async function runPipeline() {
       const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`);
 
       await processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, PAYLOAD_CONFIG);
-    }
+// ... (Ende der for...of Schleife) ...
+        }
 
-    console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.');
+        // --- NEU: AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
+        // Wir bauen eine Next.js Page, die die generierten Komponenten anzeigt.
+        // Wir ignorieren 'main', da es nur die Vite-Setup Datei ist.
+        const componentsToDisplay = reactFiles
+            .map(file => path.basename(file, path.extname(file)))
+            .filter(name => name !== 'main');
+
+        if (componentsToDisplay.length > 0) {
+            console.log(`\n🏗️  Baue Next.js Frontend Page mit ${componentsToDisplay.length} Komponenten...`);
+
+            // 1. Die Imports generieren
+            const importStatements = componentsToDisplay
+                .map(name => `import ${name} from '@/app/components/${name}';`)
+                .join('\n');
+
+            // 2. Die Komponenten im JSX-Tree generieren
+            const componentJsx = componentsToDisplay
+                .map(name => `<${name} />`)
+                .join('\n      ');
+
+            // 3. Der komplette Datei-Inhalt
+            const pageContent = `
+import React from 'react';
+${importStatements}
+import { Box } from '@mui/material';
+
+export default function VibePage() {
+  return (
+    <Box>
+      ${componentJsx}
+    </Box>
+  );
+}
+`;
+
+            // 4. Die Datei schreiben (und die alte Welcome-Page überschreiben!)
+            await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim());
+            console.log(`✅ Next.js Page erfolgreich zusammengebaut unter: ${NEXTJS_PAGE_PATH}`);
+        } else {
+            console.log('\n🤷‍♂️ Keine Komponenten zum Anzeigen gefunden (außer vielleicht "main").');
+        }
+
+        console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.');
+
   } catch (error) {
     // Falls der Ordner gar nicht existiert
     if (error.code === 'ENOENT') {
