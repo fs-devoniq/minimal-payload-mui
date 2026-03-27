@@ -7,9 +7,8 @@ dotenv.config()
 
 // Initialisiere Gemini (Wir nutzen 1.5 Pro für komplexe Code-Generierung)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-// Vorher: model: 'gemini-1.5-pro-latest'
 const model = genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash', // Flash ist rasend schnell und universell freigeschaltet
+  model: 'gemini-3.1-pro', 
   generationConfig: { temperature: 0.1 },
 })
 
