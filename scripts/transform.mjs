@@ -143,7 +143,8 @@ async function runPipeline() {
   // ACHTUNG: Nutze path.resolve für absolut sichere Pfade in Pipelines!
   const INPUT_DIR = path.resolve(process.cwd(), '../current-repo/src'); 
   const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components');
-  const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
+  // Vorher: const BACKEND_DIR = path.resolve(process.cwd(), './src/payload/collections');
+  const BACKEND_DIR = path.resolve(process.cwd(), './src/collections'); // <-- DAS IST DER FIX!
   const PAYLOAD_CONFIG = path.resolve(process.cwd(), './src/payload.config.ts');
   const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx');
 
@@ -153,12 +154,12 @@ async function runPipeline() {
     // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
     const files = await fs.readdir(INPUT_DIR, { recursive: true });
     
-// In der runPipeline Funktion:
-const reactFiles = files.filter(file => {
-  const name = path.basename(file).toLowerCase();
-  return (file.endsWith('.jsx') || file.endsWith('.tsx')) && 
-         !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name);
-});
+    // In der runPipeline Funktion:
+    const reactFiles = files.filter(file => {
+      const name = path.basename(file).toLowerCase();
+      return (file.endsWith('.jsx') || file.endsWith('.tsx')) && 
+             !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name);
+    });
 
 // Um "App" in Payload zu vermeiden, wenn du willst, dass es nur echte Sektionen sind:
 // Filtere 'App' ebenfalls aus, falls AI Studio alles in die App.tsx schreibt, 
