@@ -17,19 +17,26 @@ export async function generateMetadata(): Promise<Metadata> {
     const defaultTitle = settings?.defaultTitle || siteName
     const titleTemplate = settings?.titleTemplate || `%s | ${siteName}`
     const defaultDescription = settings?.defaultDescription || 'A minimal Payload Next.js template.'
-    const siteUrl = settings?.siteUrl || process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+    const siteUrl =
+      settings?.siteUrl || process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
     // Extract images correctly if they are objects
     const defaultOgImageUrl =
-      settings?.defaultOgImage && typeof settings.defaultOgImage === 'object' && 'url' in settings.defaultOgImage
+      settings?.defaultOgImage &&
+      typeof settings.defaultOgImage === 'object' &&
+      'url' in settings.defaultOgImage
         ? settings.defaultOgImage.url
         : ''
 
     const faviconUrl =
-      settings?.favicon && typeof settings.favicon === 'object' && 'url' in settings.favicon ? settings.favicon.url : ''
+      settings?.favicon && typeof settings.favicon === 'object' && 'url' in settings.favicon
+        ? settings.favicon.url
+        : ''
 
     const appleTouchIconUrl =
-      settings?.appleTouchIcon && typeof settings.appleTouchIcon === 'object' && 'url' in settings.appleTouchIcon
+      settings?.appleTouchIcon &&
+      typeof settings.appleTouchIcon === 'object' &&
+      'url' in settings.appleTouchIcon
         ? settings.appleTouchIcon.url
         : ''
 
@@ -107,12 +114,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {schemaJsonLd && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: schemaJsonLd }}
-          />
-        )}
+        {schemaJsonLd ? (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaJsonLd }} />
+        ) : null}
       </head>
       <body>
         <AppRouterCacheProvider>
