@@ -26,15 +26,15 @@ Konvertiere den Code zu 100% in Material UI (MUI).
 
 const SYSTEM_PROMPT_BACKEND = `
 Du bist ein Senior Backend Engineer, spezialisiert auf Payload CMS (TypeScript).
-Analysiere den folgenden Frontend-Code. Identifiziere alle dynamischen Inhalte (z.B. Überschriften, Texte, Bilder, Listen), die über ein CMS pflegbar sein müssen.
-Erstelle basierend darauf EINE vollständige Payload CMS Collection Konfiguration.
+Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS Collection Konfiguration.
 
 Regeln:
-1. Nutze die korrekten Payload-Feldtypen (text, textarea, richText, upload, array, etc.).
-2. Setze sinnvolle Slugs passend zum Komponenten-Namen.
-3. Exportiere die Collection als 'const' (z.B. 'export const HeroSection: CollectionConfig = {...}').
-4. Gib NUR den reinen TypeScript-Code zurück. Keine Markdown-Formatierung (\`\`\`), keine Erklärungen.
-`
+1. Nutze die korrekten Payload-Feldtypen (text, textarea, upload, etc.).
+2. Setze sinnvolle Slugs.
+3. WICHTIG: Exportiere die Collection EXAKT so: 
+export const [COMPONENT_NAME]: CollectionConfig = { ... }
+4. Gib NUR den reinen TypeScript-Code zurück.
+`;
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
 
@@ -88,23 +88,22 @@ async function updatePayloadConfig(configPath, collectionName) {
 
 // --- HAUPTFUNKTION: VIBE TO PRODUCTION ---
 
-async function processVibeCode(
-  inputFilePath,
-  frontendOutputPath,
-  backendOutputPath,
-  payloadConfigPath,
-) {
+async function processVibeCode(inputFilePath, frontendOutputPath, backendOutputPath, payloadConfigPath) {
   try {
-    console.log(`\n🚀 Starte Vibe-Transformation für: ${inputFilePath}`)
-    const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
+    const componentName = path.basename(inputFilePath, path.extname(inputFilePath));
+    console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`);
+    
+    const vibeCode = await fs.readFile(inputFilePath, 'utf-8');
 
-    console.log('🧠 Sende Prompts an Gemini (Frontend & Backend parallel)...')
+    // NEU: Den Platzhalter im Prompt durch den echten Namen ersetzen!
+    const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName);
 
-    // Parallele Ausführung für mehr Geschwindigkeit in der Pipeline
+    console.log('🧠 Sende Prompts an Gemini...');
+    
     const [frontendResult, backendResult] = await Promise.all([
       model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
-      model.generateContent(`${SYSTEM_PROMPT_BACKEND}\n\nInput-Code:\n${vibeCode}`),
-    ])
+      model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`)
+    ]);
 
     // Clean-up: Markdown Code-Blöcke entfernen, falls die KI sie trotz Anweisung mitschickt
     const cleanCode = (text) =>
