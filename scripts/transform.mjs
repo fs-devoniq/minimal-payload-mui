@@ -5,14 +5,22 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// Initialisiere Gemini (Wir nutzen 1.5 Pro für komplexe Code-Generierung)
+// Initialisiere Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({
-  model: 'gemini-3.1-pro-preview',
+  model: 'gemini-3.1-pro', // Das aktuelle Vibe-Coding Modell
   generationConfig: { temperature: 0.1 },
 })
 
 // --- PROMPTS ---
+
+const SYSTEM_PROMPT_SEED = `
+Analysiere den folgenden React-Code und extrahiere alle statischen Texte, Überschriften und Inhalte.
+Erstelle ein JSON-Objekt, das exakt zu den Feldern deines Payload-Blocks passt.
+WICHTIG: 
+1. Füge dem Objekt zwingend ein Feld "blockType" mit dem Wert "[COMPONENT_NAME]" hinzu.
+2. Gib NUR das reine JSON zurück. Keine Erklärungen, keine \`\`\`json Markdown-Blöcke.
+`
 
 const SYSTEM_PROMPT_FRONTEND = `
 Du bist ein Senior Frontend Engineer. 
@@ -21,7 +29,7 @@ Konvertiere den Code zu 100% in Material UI (MUI).
 1. Nutze Container, Grid, Box, Typography, Button von @mui/material.
 2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop oder entsprechende MUI-Komponenten ersetzt werden.
 3. Stelle sicher, dass ALLE MUI-Komponenten oben korrekt importiert werden.
-4. Gib NUR den Code aus.
+4. Gib NUR den reinen Code aus. Keine Markdown-Formatierung (\`\`\`).
 `
 
 const SYSTEM_PROMPT_BACKEND = `
@@ -30,10 +38,10 @@ Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS BLOCK Konfi
 
 Regeln:
 1. Nutze die korrekten Payload-Feldtypen (text, textarea, upload, etc.).
-2. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]' (camelCase, z.B. heroSection).
+2. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]'
 3. WICHTIG: Exportiere den Block EXAKT so: 
 export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...] }
-4. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen.
+4. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine Markdown-Formatierung (\`\`\`).
 `
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
@@ -44,7 +52,7 @@ async function updatePagesCollection(pagesPath, blockName) {
     let content = await fs.readFile(pagesPath, 'utf-8')
 
     if (content.includes(`import { ${blockName} }`)) {
-      console.log(`⚠️  ${blockName} ist bereits registriert.`)
+      console.log(`⚠️  ${blockName} ist bereits registriert. Überspringe Update.`)
       return
     }
 
@@ -52,8 +60,7 @@ async function updatePagesCollection(pagesPath, blockName) {
     const importStatement = `import { ${blockName} } from '../blocks/${blockName}';\n`
     content = importStatement + content
 
-    // Block ins layout Array pushen
-    // Wir nehmen an, dass es in Pages.ts ein Feld namens 'layout' vom Typ 'blocks' gibt.
+    // Block ins layout Array pushen (Sucht nach dem 'blocks' Array)
     const blocksRegex = /blocks:\s*\[/g
     const match = blocksRegex.exec(content)
 
@@ -69,7 +76,9 @@ async function updatePagesCollection(pagesPath, blockName) {
     console.error('❌ Fehler beim Aktualisieren der Pages.ts:', error)
   }
 }
+
 // --- HAUPTFUNKTION: VIBE TO PRODUCTION ---
+
 async function processVibeCode(
   inputFilePath,
   frontendOutputPath,
@@ -82,25 +91,28 @@ async function processVibeCode(
 
     const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
 
-    // Den Platzhalter im Prompt durch den echten Namen ersetzen
+    // Platzhalter in den Prompts ersetzen
     const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName)
+    const finalSeedPrompt = SYSTEM_PROMPT_SEED.replace(/\[COMPONENT_NAME\]/g, componentName)
 
-    console.log('🧠 Sende Prompts an Gemini...')
+    console.log('🧠 Sende Prompts an Gemini (Frontend, Backend & Seed Data parallel)...')
 
-    const [frontendResult, backendResult] = await Promise.all([
+    const [frontendResult, backendResult, seedResult] = await Promise.all([
       model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
       model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`),
+      model.generateContent(`${finalSeedPrompt}\n\nInput-Code:\n${vibeCode}`),
     ])
 
     // Clean-up: Markdown Code-Blöcke entfernen
     const cleanCode = (text) =>
       text
-        .replace(/```(tsx|typescript|javascript|js|jsx)?/gi, '')
+        .replace(/```(tsx|typescript|javascript|json|js|jsx)?/gi, '')
         .replace(/```/g, '')
         .trim()
 
     const finalFrontendCode = cleanCode(frontendResult.response.text())
     const finalBackendCode = cleanCode(backendResult.response.text())
+    const seedJsonString = cleanCode(seedResult.response.text())
 
     // Ordnerstruktur sicherstellen
     await fs.mkdir(path.dirname(frontendOutputPath), { recursive: true })
@@ -111,16 +123,23 @@ async function processVibeCode(
     await fs.writeFile(backendOutputPath, finalBackendCode)
 
     console.log(`✅ Frontend (MUI) gespeichert unter: ${frontendOutputPath}`)
-    console.log(`✅ Backend (Payload) gespeichert unter: ${backendOutputPath}`)
+    console.log(`✅ Backend (Payload Block) gespeichert unter: ${backendOutputPath}`)
 
-    // ... in processVibeCode ...
-    // VORHER: await updatePayloadConfig(...)
-    // NEU: Wir updaten die Pages Collection
+    // Pages Collection updaten
     await updatePagesCollection(pagesCollectionPath, componentName)
 
-    console.log(`\n🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
+    console.log(`🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
+
+    // Wir geben die Seed-Daten als Objekt zurück, damit runPipeline sie sammeln kann
+    try {
+      return JSON.parse(seedJsonString)
+    } catch (e) {
+      console.error(`⚠️ Konnte Seed-Data für ${componentName} nicht als JSON parsen.`)
+      return null
+    }
   } catch (error) {
     console.error('❌ Fehler in der Pipeline:', error)
+    return null
   }
 }
 
@@ -131,17 +150,14 @@ async function runPipeline() {
   const FRONTEND_DIR = path.resolve(process.cwd(), './src/app/components')
   const BACKEND_DIR = path.resolve(process.cwd(), './src/blocks')
   const PAGES_COLLECTION_PATH = path.resolve(process.cwd(), './src/collections/Pages.ts')
-
-  // NEU: Diese Zeile hat gefehlt!
   const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx')
+  const SEED_FILE_PATH = path.resolve(process.cwd(), './src/seed-data.json')
 
   try {
     console.log(`Durchsuche Ordner: ${INPUT_DIR}`)
 
-    // NEU: Rekursive Suche! Findet auch Dateien in Unterordnern
     const files = await fs.readdir(INPUT_DIR, { recursive: true })
 
-    // In der runPipeline Funktion:
     const reactFiles = files.filter((file) => {
       const name = path.basename(file).toLowerCase()
       return (
@@ -150,10 +166,6 @@ async function runPipeline() {
       )
     })
 
-    // Um "App" in Payload zu vermeiden, wenn du willst, dass es nur echte Sektionen sind:
-    // Filtere 'App' ebenfalls aus, falls AI Studio alles in die App.tsx schreibt,
-    // nenne die Datei in AI Studio lieber 'Hero.tsx' vor dem Sync.
-
     if (reactFiles.length === 0) {
       console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.')
       return
@@ -161,25 +173,31 @@ async function runPipeline() {
 
     console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`)
 
-    for (const file of reactFiles) {
-      const componentName = path.basename(file, path.extname(file))
+    const allSeedData = []
 
+    for (const file of reactFiles) {
       const inputFilePath = path.join(INPUT_DIR, file)
+      const componentName = path.basename(file, path.extname(file))
       const frontendOutputPath = path.join(FRONTEND_DIR, `${componentName}.tsx`)
       const backendOutputPath = path.join(BACKEND_DIR, `${componentName}.ts`)
 
-      // HIER ist die entscheidende Änderung: Wir übergeben PAGES_COLLECTION_PATH als 4. Parameter!
-      await processVibeCode(
+      const blockData = await processVibeCode(
         inputFilePath,
         frontendOutputPath,
         backendOutputPath,
         PAGES_COLLECTION_PATH,
       )
+
+      if (blockData) {
+        allSeedData.push(blockData)
+      }
     }
 
-    // --- NEU: AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
-    // Wir bauen eine Next.js Page, die die generierten Komponenten anzeigt.
-    // Wir ignorieren 'main', da es nur die Vite-Setup Datei ist.
+    // Die gesammelten Seed-Daten speichern
+    await fs.writeFile(SEED_FILE_PATH, JSON.stringify(allSeedData, null, 2))
+    console.log(`\n🌱 Seed-Daten erfolgreich gesammelt und unter ${SEED_FILE_PATH} gespeichert!`)
+
+    // --- AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
     const componentsToDisplay = reactFiles
       .map((file) => path.basename(file, path.extname(file)))
       .filter((name) => name !== 'main')
@@ -189,15 +207,12 @@ async function runPipeline() {
         `\n🏗️  Baue Next.js Frontend Page mit ${componentsToDisplay.length} Komponenten...`,
       )
 
-      // 1. Die Imports generieren
       const importStatements = componentsToDisplay
         .map((name) => `import ${name} from '@/app/components/${name}';`)
         .join('\n')
 
-      // 2. Die Komponenten im JSX-Tree generieren
       const componentJsx = componentsToDisplay.map((name) => `<${name} />`).join('\n      ')
 
-      // 3. Der komplette Datei-Inhalt
       const pageContent = `
 import React from 'react';
 ${importStatements}
@@ -211,17 +226,12 @@ export default function VibePage() {
   );
 }
 `
-
-      // 4. Die Datei schreiben (und die alte Welcome-Page überschreiben!)
       await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim())
       console.log(`✅ Next.js Page erfolgreich zusammengebaut unter: ${NEXTJS_PAGE_PATH}`)
-    } else {
-      console.log('\n🤷‍♂️ Keine Komponenten zum Anzeigen gefunden (außer vielleicht "main").')
     }
 
     console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.')
   } catch (error) {
-    // Falls der Ordner gar nicht existiert
     if (error.code === 'ENOENT') {
       console.error(`❌ Ordner '${INPUT_DIR}' nicht gefunden. Hast du Code gepusht?`)
     } else {
