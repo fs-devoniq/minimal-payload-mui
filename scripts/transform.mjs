@@ -60,7 +60,19 @@ WICHTIG:
 3. LINK-FELDER: URLs müssen gültige Pfade sein (z.B. "/", "/kontakt" oder "https://...").
 4. Gib NUR das reine JSON zurück. Keine Erklärungen, keine Markdown-Blöcke.
 `
+const SYSTEM_PROMPT_THEME = `
+Du bist ein Senior UX/UI Engineer.
+Analysiere den folgenden React-Code (insbesondere die App/Root-Komponente).
+Finde das Farbschema (Primary, Secondary, Background, Text) und die Typografie-Einstellungen heraus.
+Erstelle eine vollständige, saubere Material UI (MUI) 'createTheme' Konfiguration in TypeScript.
 
+WICHTIG:
+1. Erstelle ein 'palette' Objekt mit primary, secondary, background, text etc.
+2. Erstelle ein 'typography' Objekt passend zum Vibe des Codes.
+3. Importiere 'createTheme' von '@mui/material/styles'.
+4. Exportiere das Theme als Default: \`export default theme;\`
+5. Gib NUR den reinen TypeScript-Code zurück. Keine Markdown-Blöcke.
+`
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
 
 async function updatePagesCollection(pagesPath, blockName) {
@@ -234,6 +246,31 @@ async function runPipeline() {
     // Die gesammelten Seed-Daten speichern
     await fs.writeFile(SEED_FILE_PATH, JSON.stringify(allSeedData, null, 2))
     console.log(`\n🌱 Seed-Daten erfolgreich gesammelt und unter ${SEED_FILE_PATH} gespeichert!`)
+
+    // --- NEU: AUTOMATISCHE THEME-GENERIERUNG ---
+    const THEME_OUTPUT_PATH = path.resolve(process.cwd(), './src/theme.ts') // Pass den Pfad an dein Base-Template an (oft auch src/app/theme.ts)
+
+    // Wir suchen die App.tsx oder main.tsx, da dort meistens die Farben definiert sind
+    const rootFile = files.find((f) => /app\.tsx$|main\.tsx$/i.test(path.basename(f)))
+
+    if (rootFile) {
+      console.log(`\n🎨 Extrahiere MUI Theme aus ${rootFile}...`)
+      const rootCode = await fs.readFile(path.join(INPUT_DIR, rootFile), 'utf-8')
+
+      const themeResult = await model.generateContent(
+        `${SYSTEM_PROMPT_THEME}\n\nInput-Code:\n${rootCode}`,
+      )
+      const cleanThemeCode = themeResult.response
+        .text()
+        .replace(/```(tsx|typescript|javascript|js)?/gi, '')
+        .replace(/```/g, '')
+        .trim()
+
+      await fs.writeFile(THEME_OUTPUT_PATH, cleanThemeCode)
+      console.log(`✅ Dynamisches MUI Theme gespeichert unter: ${THEME_OUTPUT_PATH}`)
+    } else {
+      console.log('\n⚠️ Keine Root-Datei gefunden, überspringe Theme-Generierung.')
+    }
 
     // --- AUTOMATISCHER FRONEND-ZUSAMMENBAU (CMS DATA FETCHING) ---
     const componentsToDisplay = reactFiles.map((file) => path.basename(file, path.extname(file)))
