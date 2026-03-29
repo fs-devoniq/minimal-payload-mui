@@ -3,9 +3,43 @@ import config from '@/payload.config'
 import { NextResponse } from 'next/server'
 import seedData from '@/seed-data.json'
 
-// Hilfsfunktion für den eigentlichen Download
+// Wir speichern die ID des Fallback-Bildes, damit wir es nur EINMAL generieren müssen
+let fallbackImageId: any = null
+
+// ✨ DER MAGISCHE FALLBACK-GENERATOR
+async function getFallbackImage(payload: any) {
+  if (fallbackImageId) return fallbackImageId // Wenn schon generiert, nimm die bekannte ID
+
+  console.log('🛠️ Generiere lokales Fallback-Bild, da Download fehlschlug...')
+
+  // Ein simples, graues SVG-Bild mit Text "Platzhalter"
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="24" fill="#666" text-anchor="middle" dominant-baseline="middle">Platzhalter</text></svg>`
+  const buffer = Buffer.from(svg)
+
+  const media = await payload.create({
+    collection: 'media',
+    data: { alt: 'Lokales Fallback Bild' },
+    file: {
+      data: buffer,
+      mimetype: 'image/svg+xml',
+      name: `fallback-${Date.now()}.svg`,
+      size: buffer.length,
+    },
+  })
+
+  fallbackImageId = media.id
+  return media.id
+}
+
+// Die verbesserte Download-Funktion
 async function downloadAndUpload(url: string, payload: any) {
   try {
+    // Wenn die URL nicht mal mit http anfängt (z.B. /placeholder-icon.svg), gar nicht erst versuchen!
+    if (!url || !url.startsWith('http')) {
+      console.log(`⚠️ Überspringe ungültigen Pfad (${url}), nutze Fallback.`)
+      return await getFallbackImage(payload)
+    }
+
     console.log(`📸 Lade Bild herunter: ${url}`)
     const response = await fetch(url)
     if (!response.ok) throw new Error(`HTTP Error: ${response.status}`)
@@ -26,34 +60,30 @@ async function downloadAndUpload(url: string, payload: any) {
     console.log(`✅ Bild gespeichert unter ID: ${media.id}`)
     return media.id
   } catch (e) {
-    console.error(`❌ Fehler beim Bild-Download (${url}):`, e)
-    return null // Wenn Download fehlschlägt, gib null zurück, damit Payload nicht crasht
+    // WENN DER DOWNLOAD CRASHT -> NUTZE UNSER SELBSTGEBAUTES SVG!
+    console.error(`❌ Download fehlgeschlagen (${url}). Nutze Fallback-Bild!`)
+    return await getFallbackImage(payload)
   }
 }
 
-// Rekursive Funktion, die das JSON durchsucht und die Fehler der KI heilt
+// Die Rekursions-Funktion bleibt gleich
 async function processImagesAndUpload(data: any, payload: any): Promise<any> {
   if (Array.isArray(data)) {
     return Promise.all(data.map((item) => processImagesAndUpload(item, payload)))
   } else if (typeof data === 'object' && data !== null) {
-    // Fall 1: KI hat brav das _isImage Tag genutzt
     if (data._isImage && data.url) {
       return await downloadAndUpload(data.url, payload)
     }
 
     const processedData: any = {}
     for (const [key, value] of Object.entries(data)) {
-      // Fall 2: KI war stur und hat einfach eine URL als String übergeben!
-      // Wenn der Wert ein Web-Link ist UND der Feldname nach Bild klingt (Image, Icon, Logo, Bg, etc.)
       if (
         typeof value === 'string' &&
         value.startsWith('http') &&
         /image|icon|logo|picture|bg/i.test(key)
       ) {
-        console.log(`🛠️ Auto-Heilung aktiv für Feld '${key}'...`)
         processedData[key] = await downloadAndUpload(value, payload)
       } else {
-        // Normales Feld, weiter rekursiv reingehen
         processedData[key] = await processImagesAndUpload(value, payload)
       }
     }
@@ -75,7 +105,7 @@ export async function GET() {
       return NextResponse.json({ message: 'Startseite existiert bereits. Seeding abgebrochen.' })
     }
 
-    console.log('🚀 Starte Deep-Seeding Prozess (inkl. robuster Bild-Downloads)...')
+    console.log('🚀 Starte Deep-Seeding Prozess (inkl. Fallback-Generator)...')
 
     const processedLayout = await processImagesAndUpload(seedData, payload)
 
