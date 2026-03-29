@@ -26,6 +26,8 @@ DYNAMISCHE DATEN (CMS READY):
 4. Ersetze ALLE hardcodierten Inhalte im JSX durch die entsprechenden Variablen aus den Props.
 5. BILDER: Gehe davon aus, dass Bild-Props aus dem CMS als Objekt mit einer \`url\` Eigenschaft kommen (nutze z.B. \`props.image?.url || ''\`).
 6. Fallbacks: Nutze sinnvolle Fallbacks (z.B. \`props.title || ''\`), damit die Seite nicht crasht, wenn das CMS leere Felder schickt.
+7. ARRAYS & MAPS: Bevor du '.map()' auf eine Prop anwendest, prüfe IMMER zwingend, ob es ein Array ist (z.B. \`Array.isArray(props.items) && props.items.map(...)\`), da das CMS bei leeren Listen 'null' übergibt und die Seite sonst crasht!
+8. ARRAYS OF STRINGS: Wenn das Design ein Array von Strings nutzt (z.B. für Listen, Features, Tags), gehe davon aus, dass das CMS stattdessen ein Array von Objekten liefert. Nutze beim Rendern (map) niemals das Objekt selbst, sondern greife auf einen logischen Schlüssel zu (z.B. \`{item.title}\` oder \`{item.text}\` oder \`{item.feature}\`).
 
 MUI REGELN:
 1. Nutze Container, Grid, Box, Typography, Button von @mui/material.
