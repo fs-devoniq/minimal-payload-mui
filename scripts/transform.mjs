@@ -86,24 +86,18 @@ async function processVibeCode(
   pagesCollectionPath,
 ) {
   try {
-    const componentName = path.basename(inputFilePath, path.extname(inputFilePath))
-    console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`)
-
-    const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
-
-    // Platzhalter in den Prompts ersetzen
+    // ... (oberer Teil bleibt gleich)
     const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName)
     const finalSeedPrompt = SYSTEM_PROMPT_SEED.replace(/\[COMPONENT_NAME\]/g, componentName)
 
-    console.log('🧠 Sende Prompts an Gemini (Frontend, Backend & Seed Data parallel)...')
+    console.log('🧠 Sende Prompts an Gemini (Frontend & Backend parallel)...')
 
-    const [frontendResult, backendResult, seedResult] = await Promise.all([
+    // 1. SCHRITT: Frontend und Backend parallel generieren
+    const [frontendResult, backendResult] = await Promise.all([
       model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
       model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`),
-      model.generateContent(`${finalSeedPrompt}\n\nInput-Code:\n${vibeCode}`),
     ])
 
-    // Clean-up: Markdown Code-Blöcke entfernen
     const cleanCode = (text) =>
       text
         .replace(/```(tsx|typescript|javascript|json|js|jsx)?/gi, '')
@@ -112,9 +106,23 @@ async function processVibeCode(
 
     const finalFrontendCode = cleanCode(frontendResult.response.text())
     const finalBackendCode = cleanCode(backendResult.response.text())
+
+    // 2. SCHRITT: Seed-Daten basierend auf dem ECHTEN Backend-Schema generieren!
+    console.log('🌱 Generiere passgenaue Seed-Daten aus dem Schema...')
+
+    // Wir füttern der KI das fertige TypeScript-Schema mit, damit sie sich nicht vertippen kann
+    const strictlyTypedSeedPrompt = `${finalSeedPrompt}
+    
+    WICHTIG: Nutze für das JSON EXAKT dieses TypeScript-Schema als Vorlage für die Datenstruktur:
+    ${finalBackendCode}
+    
+    Input-Code:
+    ${vibeCode}`
+
+    const seedResult = await model.generateContent(strictlyTypedSeedPrompt)
     const seedJsonString = cleanCode(seedResult.response.text())
 
-    // Ordnerstruktur sicherstellen
+    // Ordnerstruktur sicherstellen ... (der restliche Code unten bleibt komplett gleich!)
     await fs.mkdir(path.dirname(frontendOutputPath), { recursive: true })
     await fs.mkdir(path.dirname(backendOutputPath), { recursive: true })
 
