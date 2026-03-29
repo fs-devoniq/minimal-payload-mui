@@ -174,22 +174,7 @@ export interface Media {
 export interface Page {
   id: number;
   title: string;
-  slug: string;
-  content?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
+  layout?: unknown[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -353,8 +338,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
-  slug?: T;
-  content?: T;
+  layout?: T | {};
   meta?:
     | T
     | {
