@@ -8,11 +8,12 @@ dotenv.config()
 // Initialisiere Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({
-  model: 'gemini-3.1-pro-preview',
+  model: 'gemini-3.1-pro', // Das stärkste Modell für Code-Architektur
   generationConfig: { temperature: 0.1 },
 })
 
 // --- PROMPTS ---
+
 const SYSTEM_PROMPT_FRONTEND = `
 Du bist ein Senior Frontend Engineer. 
 WICHTIG: Erstelle eine Next.js Client Komponente ('use client').
@@ -24,12 +25,12 @@ DYNAMISCHE DATEN (CMS READY):
 3. Die Komponente MUSS diese Props akzeptieren: \`export default function [COMPONENT_NAME](props: [COMPONENT_NAME]Props)\`.
 4. Ersetze ALLE hardcodierten Inhalte im JSX durch die entsprechenden Variablen aus den Props.
 5. BILDER: Gehe davon aus, dass Bild-Props aus dem CMS als Objekt mit einer \`url\` Eigenschaft kommen (nutze z.B. \`props.image?.url || ''\`).
-6. Fallbacks: Nutze sinnvolle Fallbacks (z.B. \`props.title || 'Titel fehlt'\`), damit die Seite nicht crasht, wenn das CMS leere Felder schickt.
+6. Fallbacks: Nutze sinnvolle Fallbacks (z.B. \`props.title || ''\`), damit die Seite nicht crasht, wenn das CMS leere Felder schickt.
 
 MUI REGELN:
 1. Nutze Container, Grid, Box, Typography, Button von @mui/material.
 2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop ersetzt werden.
-3. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine \`\`\`.
+3. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine Markdown-Formatierung (\`\`\`).
 `
 
 const SYSTEM_PROMPT_BACKEND = `
@@ -39,11 +40,11 @@ Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS BLOCK Konfi
 Regeln:
 1. Nutze die korrekten Payload-Feldtypen. 
 2. WICHTIG: Für Bilder nutze ZWINGEND { name: 'image', type: 'upload', relationTo: 'media' }.
-3. Mache keine Felder 'required: true', um Seeding-Fehler zu vermeiden.
+3. Mache KEINE Felder 'required: true', um Seeding-Fehler zu vermeiden.
 4. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]'
 5. Exportiere den Block EXAKT so: 
 export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...] }
-6. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen.
+6. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine Markdown-Formatierung (\`\`\`).
 `
 
 const SYSTEM_PROMPT_SEED = `
@@ -55,7 +56,7 @@ WICHTIG:
 2. UPLOAD-FELDER (DER MAGISCHE TRICK): Wenn das TypeScript-Schema ein Feld vom Typ 'upload' (z. B. Bilder) enthält, extrahiere die Bild-URL aus dem Code und gib EXAKT dieses Objekt anstelle eines Strings zurück: 
    { "_isImage": true, "url": "HIER_DIE_URL_EINTRAGEN" }
 3. LINK-FELDER: URLs müssen gültige Pfade sein (z.B. "/", "/kontakt" oder "https://...").
-4. Gib NUR das reine JSON zurück. Keine Erklärungen.
+4. Gib NUR das reine JSON zurück. Keine Erklärungen, keine Markdown-Blöcke.
 `
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
@@ -100,20 +101,20 @@ async function processVibeCode(
   pagesCollectionPath,
 ) {
   try {
-    // 1. Die Variablen, die gefehlt haben!
     const componentName = path.basename(inputFilePath, path.extname(inputFilePath))
     console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`)
     const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
 
-    // 2. Platzhalter ersetzen
+    // Platzhalter in den Prompts ersetzen
+    const finalFrontendPrompt = SYSTEM_PROMPT_FRONTEND.replace(/\[COMPONENT_NAME\]/g, componentName)
     const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName)
     const finalSeedPrompt = SYSTEM_PROMPT_SEED.replace(/\[COMPONENT_NAME\]/g, componentName)
 
     console.log('🧠 Sende Prompts an Gemini (Frontend & Backend parallel)...')
 
-    // 3. SCHRITT: Frontend und Backend parallel generieren
+    // 1. SCHRITT: Frontend und Backend parallel generieren
     const [frontendResult, backendResult] = await Promise.all([
-      model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
+      model.generateContent(`${finalFrontendPrompt}\n\nInput-Code:\n${vibeCode}`),
       model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`),
     ])
 
@@ -126,7 +127,7 @@ async function processVibeCode(
     const finalFrontendCode = cleanCode(frontendResult.response.text())
     const finalBackendCode = cleanCode(backendResult.response.text())
 
-    // 4. SCHRITT: Seed-Daten basierend auf dem ECHTEN Backend-Schema generieren!
+    // 2. SCHRITT: Seed-Daten basierend auf dem ECHTEN Backend-Schema generieren!
     console.log('🌱 Generiere passgenaue Seed-Daten aus dem Schema...')
 
     const strictlyTypedSeedPrompt = `${finalSeedPrompt}
@@ -179,20 +180,12 @@ async function runPipeline() {
   const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx')
   const SEED_FILE_PATH = path.resolve(process.cwd(), './src/seed-data.json')
 
-  // ... (Ordner-Pfade oben bleiben gleich)
-
   try {
     console.log(`Durchsuche Ordner: ${INPUT_DIR}`)
+
     const files = await fs.readdir(INPUT_DIR, { recursive: true })
 
-    // 1. NEU: Wir suchen uns die App.tsx (unsere Master-Seite) gezielt heraus!
-    const appFile = files.find(
-      (f) =>
-        path.basename(f).toLowerCase() === 'app.tsx' ||
-        path.basename(f).toLowerCase() === 'app.jsx',
-    )
-
-    // 2. Wir filtern die echten Sektionen heraus (kein main, kein index, und KEIN app mehr!)
+    // Wir ignorieren main, index UND die App.tsx (weil App nur ein Wrapper ist)
     const reactFiles = files.filter((file) => {
       const name = path.basename(file).toLowerCase()
       return (
@@ -210,14 +203,14 @@ async function runPipeline() {
     })
 
     if (reactFiles.length === 0) {
-      console.log('🤷‍♂️ Keine Vibe-Sektionen gefunden. Beende Skript.')
+      console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.')
       return
     }
 
-    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Blocks...\n`)
+    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`)
+
     const allSeedData = []
 
-    // 3. Die echten Sektionen (Hero, Services etc.) ganz normal durchlaufen lassen
     for (const file of reactFiles) {
       const inputFilePath = path.join(INPUT_DIR, file)
       const componentName = path.basename(file, path.extname(file))
@@ -236,45 +229,81 @@ async function runPipeline() {
       }
     }
 
+    // Die gesammelten Seed-Daten speichern
     await fs.writeFile(SEED_FILE_PATH, JSON.stringify(allSeedData, null, 2))
-    console.log(`\n🌱 Seed-Daten erfolgreich gesammelt!`)
+    console.log(`\n🌱 Seed-Daten erfolgreich gesammelt und unter ${SEED_FILE_PATH} gespeichert!`)
 
-    // 4. NEU: Die App.tsx speziell als page.tsx transformieren!
-    if (appFile) {
-      console.log(`\n🏗️  Transformiere Master-Datei (${appFile}) zu Next.js page.tsx...`)
-      const appCode = await fs.readFile(path.join(INPUT_DIR, appFile), 'utf-8')
+    // --- AUTOMATISCHER FRONEND-ZUSAMMENBAU (CMS DATA FETCHING) ---
+    const componentsToDisplay = reactFiles.map((file) => path.basename(file, path.extname(file)))
 
-      // Eigener Prompt nur für die App.tsx
-      const PAGE_PROMPT = `
-            Du bist Senior Next.js Engineer. 
-            Mache aus dieser React App-Komponente eine Next.js Page-Komponente.
-            
-            WICHTIGE REGELN:
-            1. Füge GANZ OBEN 'use client'; hinzu.
-            2. Exportiere als: export default function Page() { ... }
-            3. Korrigiere ALLE relativen Component-Imports (wie './components/Hero' oder './Hero') 
-               sodass sie auf den absoluten Next.js Pfad zeigen: '@/app/components/Hero'.
-            4. Nutze MUI (Box) wie im Code vorgesehen.
-            5. Gib NUR den reinen TypeScript-Code zurück.
-            `
+    if (componentsToDisplay.length > 0) {
+      console.log(
+        `\n🏗️  Baue dynamische Next.js CMS Page mit ${componentsToDisplay.length} Komponenten...`,
+      )
 
-      const pageResult = await model.generateContent(`${PAGE_PROMPT}\n\nInput-Code:\n${appCode}`)
-      const cleanPageCode = pageResult.response
-        .text()
-        .replace(/```(tsx|typescript|javascript|js|jsx)?/gi, '')
-        .replace(/```/g, '')
-        .trim()
+      const importStatements = componentsToDisplay
+        .map((name) => `import ${name} from '@/app/components/${name}';`)
+        .join('\n')
 
-      await fs.writeFile(NEXTJS_PAGE_PATH, cleanPageCode)
-      console.log(`✅ Next.js Page erfolgreich generiert unter: ${NEXTJS_PAGE_PATH}`)
-    } else {
-      console.log('\n⚠️ Keine App.tsx gefunden! Baue stattdessen generische page.tsx...')
-      // (Hier könnte dein alter Fallback-Code stehen, aber Vibe liefert ja immer eine App.tsx)
+      const componentMapEntries = componentsToDisplay.map((name) => `  ${name},`).join('\n')
+
+      const pageContent = `
+import React from 'react';
+import { getPayload } from 'payload';
+import config from '@/payload.config';
+import { Box } from '@mui/material';
+
+// 1. Alle generierten KI-Komponenten importieren
+${importStatements}
+
+// 2. Map erstellen, um Payload 'blockType' mit der echten React-Komponente zu matchen
+const componentMap: Record<string, React.FC<any>> = {
+${componentMapEntries}
+};
+
+export default async function CMSPage() {
+  // 3. Daten live aus der Payload-Datenbank holen!
+  const payload = await getPayload({ config });
+  const pages = await payload.find({
+    collection: 'pages',
+    where: { title: { equals: 'Startseite' } },
+  });
+
+  const pageData = pages.docs[0];
+
+  if (!pageData) {
+    return (
+      <Box sx={{ p: 10, textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <h1>Keine CMS-Daten gefunden</h1>
+        <p>Bitte rufe zuerst <b>/api/seed</b> auf, um die Datenbank zu füllen.</p>
+      </Box>
+    );
+  }
+
+  // 4. Das layout-Array durchgehen und die Komponenten mit den CMS-Daten füttern
+  return (
+    <Box>
+      {pageData.layout?.map((block: any, index: number) => {
+        const Component = componentMap[block.blockType];
+        
+        if (!Component) {
+          console.warn(\`Keine Komponente für Block-Typ \${block.blockType} gefunden\`);
+          return null;
+        }
+
+        // HIER PASSIERT DIE MAGIE: Wir übergeben die kompletten Block-Daten als Props!
+        return <Component key={index} {...block} />;
+      })}
+    </Box>
+  );
+}
+`
+      await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim())
+      console.log(`✅ Dynamische Next.js CMS Page erfolgreich gebaut unter: ${NEXTJS_PAGE_PATH}`)
     }
 
     console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.')
   } catch (error) {
-    // ... (Fehlerbehandlung bleibt gleich)
     if (error.code === 'ENOENT') {
       console.error(`❌ Ordner '${INPUT_DIR}' nicht gefunden. Hast du Code gepusht?`)
     } else {
