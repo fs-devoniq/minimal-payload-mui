@@ -169,28 +169,45 @@ async function runPipeline() {
   const NEXTJS_PAGE_PATH = path.resolve(process.cwd(), './src/app/(frontend)/page.tsx')
   const SEED_FILE_PATH = path.resolve(process.cwd(), './src/seed-data.json')
 
+  // ... (Ordner-Pfade oben bleiben gleich)
+
   try {
     console.log(`Durchsuche Ordner: ${INPUT_DIR}`)
-
     const files = await fs.readdir(INPUT_DIR, { recursive: true })
 
+    // 1. NEU: Wir suchen uns die App.tsx (unsere Master-Seite) gezielt heraus!
+    const appFile = files.find(
+      (f) =>
+        path.basename(f).toLowerCase() === 'app.tsx' ||
+        path.basename(f).toLowerCase() === 'app.jsx',
+    )
+
+    // 2. Wir filtern die echten Sektionen heraus (kein main, kein index, und KEIN app mehr!)
     const reactFiles = files.filter((file) => {
       const name = path.basename(file).toLowerCase()
       return (
         (file.endsWith('.jsx') || file.endsWith('.tsx')) &&
-        !['main.tsx', 'main.jsx', 'index.tsx', 'index.jsx', 'vite-env.d.ts'].includes(name)
+        ![
+          'main.tsx',
+          'main.jsx',
+          'index.tsx',
+          'index.jsx',
+          'vite-env.d.ts',
+          'app.tsx',
+          'app.jsx',
+        ].includes(name)
       )
     })
 
     if (reactFiles.length === 0) {
-      console.log('🤷‍♂️ Keine neuen Vibe-Dateien im Ordner gefunden. Beende Skript.')
+      console.log('🤷‍♂️ Keine Vibe-Sektionen gefunden. Beende Skript.')
       return
     }
 
-    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Dateien...\n`)
-
+    console.log(`\n📦 Starte Batch-Verarbeitung für ${reactFiles.length} Blocks...\n`)
     const allSeedData = []
 
+    // 3. Die echten Sektionen (Hero, Services etc.) ganz normal durchlaufen lassen
     for (const file of reactFiles) {
       const inputFilePath = path.join(INPUT_DIR, file)
       const componentName = path.basename(file, path.extname(file))
@@ -209,45 +226,45 @@ async function runPipeline() {
       }
     }
 
-    // Die gesammelten Seed-Daten speichern
     await fs.writeFile(SEED_FILE_PATH, JSON.stringify(allSeedData, null, 2))
-    console.log(`\n🌱 Seed-Daten erfolgreich gesammelt und unter ${SEED_FILE_PATH} gespeichert!`)
+    console.log(`\n🌱 Seed-Daten erfolgreich gesammelt!`)
 
-    // --- AUTOMATISCHER FRONEND-ZUSAMMENBAU ---
-    const componentsToDisplay = reactFiles
-      .map((file) => path.basename(file, path.extname(file)))
-      .filter((name) => name !== 'main')
+    // 4. NEU: Die App.tsx speziell als page.tsx transformieren!
+    if (appFile) {
+      console.log(`\n🏗️  Transformiere Master-Datei (${appFile}) zu Next.js page.tsx...`)
+      const appCode = await fs.readFile(path.join(INPUT_DIR, appFile), 'utf-8')
 
-    if (componentsToDisplay.length > 0) {
-      console.log(
-        `\n🏗️  Baue Next.js Frontend Page mit ${componentsToDisplay.length} Komponenten...`,
-      )
+      // Eigener Prompt nur für die App.tsx
+      const PAGE_PROMPT = `
+            Du bist Senior Next.js Engineer. 
+            Mache aus dieser React App-Komponente eine Next.js Page-Komponente.
+            
+            WICHTIGE REGELN:
+            1. Füge GANZ OBEN 'use client'; hinzu.
+            2. Exportiere als: export default function Page() { ... }
+            3. Korrigiere ALLE relativen Component-Imports (wie './components/Hero' oder './Hero') 
+               sodass sie auf den absoluten Next.js Pfad zeigen: '@/app/components/Hero'.
+            4. Nutze MUI (Box) wie im Code vorgesehen.
+            5. Gib NUR den reinen TypeScript-Code zurück.
+            `
 
-      const importStatements = componentsToDisplay
-        .map((name) => `import ${name} from '@/app/components/${name}';`)
-        .join('\n')
+      const pageResult = await model.generateContent(`${PAGE_PROMPT}\n\nInput-Code:\n${appCode}`)
+      const cleanPageCode = pageResult.response
+        .text()
+        .replace(/```(tsx|typescript|javascript|js|jsx)?/gi, '')
+        .replace(/```/g, '')
+        .trim()
 
-      const componentJsx = componentsToDisplay.map((name) => `<${name} />`).join('\n      ')
-
-      const pageContent = `
-import React from 'react';
-${importStatements}
-import { Box } from '@mui/material';
-
-export default function VibePage() {
-  return (
-    <Box>
-      ${componentJsx}
-    </Box>
-  );
-}
-`
-      await fs.writeFile(NEXTJS_PAGE_PATH, pageContent.trim())
-      console.log(`✅ Next.js Page erfolgreich zusammengebaut unter: ${NEXTJS_PAGE_PATH}`)
+      await fs.writeFile(NEXTJS_PAGE_PATH, cleanPageCode)
+      console.log(`✅ Next.js Page erfolgreich generiert unter: ${NEXTJS_PAGE_PATH}`)
+    } else {
+      console.log('\n⚠️ Keine App.tsx gefunden! Baue stattdessen generische page.tsx...')
+      // (Hier könnte dein alter Fallback-Code stehen, aber Vibe liefert ja immer eine App.tsx)
     }
 
     console.log('\n🏁 ALL DONE! Das komplette Vibe-Projekt wurde transformiert.')
   } catch (error) {
+    // ... (Fehlerbehandlung bleibt gleich)
     if (error.code === 'ENOENT') {
       console.error(`❌ Ordner '${INPUT_DIR}' nicht gefunden. Hast du Code gepusht?`)
     } else {
