@@ -5,10 +5,10 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-// Initialisiere Gemini (Wir nutzen 1.5 Pro für komplexe Code-Generierung)
+// Initialisiere Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 const model = genAI.getGenerativeModel({
-  model: 'gemini-3.1-pro-preview',
+  model: 'gemini-3.1-pro', // Das stärkste Modell für Code-Architektur
   generationConfig: { temperature: 0.1 },
 })
 
@@ -86,13 +86,18 @@ async function processVibeCode(
   pagesCollectionPath,
 ) {
   try {
-    // ... (oberer Teil bleibt gleich)
+    // 1. Die Variablen, die gefehlt haben!
+    const componentName = path.basename(inputFilePath, path.extname(inputFilePath))
+    console.log(`\n🚀 Starte Vibe-Transformation für: ${componentName}`)
+    const vibeCode = await fs.readFile(inputFilePath, 'utf-8')
+
+    // 2. Platzhalter ersetzen
     const finalBackendPrompt = SYSTEM_PROMPT_BACKEND.replace(/\[COMPONENT_NAME\]/g, componentName)
     const finalSeedPrompt = SYSTEM_PROMPT_SEED.replace(/\[COMPONENT_NAME\]/g, componentName)
 
     console.log('🧠 Sende Prompts an Gemini (Frontend & Backend parallel)...')
 
-    // 1. SCHRITT: Frontend und Backend parallel generieren
+    // 3. SCHRITT: Frontend und Backend parallel generieren
     const [frontendResult, backendResult] = await Promise.all([
       model.generateContent(`${SYSTEM_PROMPT_FRONTEND}\n\nInput-Code:\n${vibeCode}`),
       model.generateContent(`${finalBackendPrompt}\n\nInput-Code:\n${vibeCode}`),
@@ -107,10 +112,9 @@ async function processVibeCode(
     const finalFrontendCode = cleanCode(frontendResult.response.text())
     const finalBackendCode = cleanCode(backendResult.response.text())
 
-    // 2. SCHRITT: Seed-Daten basierend auf dem ECHTEN Backend-Schema generieren!
+    // 4. SCHRITT: Seed-Daten basierend auf dem ECHTEN Backend-Schema generieren!
     console.log('🌱 Generiere passgenaue Seed-Daten aus dem Schema...')
 
-    // Wir füttern der KI das fertige TypeScript-Schema mit, damit sie sich nicht vertippen kann
     const strictlyTypedSeedPrompt = `${finalSeedPrompt}
     
     WICHTIG: Nutze für das JSON EXAKT dieses TypeScript-Schema als Vorlage für die Datenstruktur:
@@ -122,7 +126,7 @@ async function processVibeCode(
     const seedResult = await model.generateContent(strictlyTypedSeedPrompt)
     const seedJsonString = cleanCode(seedResult.response.text())
 
-    // Ordnerstruktur sicherstellen ... (der restliche Code unten bleibt komplett gleich!)
+    // Ordnerstruktur sicherstellen
     await fs.mkdir(path.dirname(frontendOutputPath), { recursive: true })
     await fs.mkdir(path.dirname(backendOutputPath), { recursive: true })
 
@@ -138,7 +142,7 @@ async function processVibeCode(
 
     console.log(`🎉 Transformation von ${componentName} vollständig abgeschlossen!`)
 
-    // Wir geben die Seed-Daten als Objekt zurück, damit runPipeline sie sammeln kann
+    // Seed-Daten zurückgeben
     try {
       return JSON.parse(seedJsonString)
     } catch (e) {
