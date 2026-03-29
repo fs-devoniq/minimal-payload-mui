@@ -13,15 +13,6 @@ const model = genAI.getGenerativeModel({
 })
 
 // --- PROMPTS ---
-
-const SYSTEM_PROMPT_SEED = `
-Analysiere den folgenden React-Code und extrahiere alle statischen Texte, Überschriften und Inhalte.
-Erstelle ein JSON-Objekt, das exakt zu den Feldern deines Payload-Blocks passt.
-WICHTIG: 
-1. Füge dem Objekt zwingend ein Feld "blockType" mit dem Wert "[COMPONENT_NAME]" hinzu.
-2. Gib NUR das reine JSON zurück. Keine Erklärungen, keine \`\`\`json Markdown-Blöcke.
-`
-
 const SYSTEM_PROMPT_FRONTEND = `
 Du bist ein Senior Frontend Engineer. 
 WICHTIG: Erstelle eine Next.js Client Komponente ('use client').
@@ -37,11 +28,24 @@ Du bist ein Senior Backend Engineer, spezialisiert auf Payload CMS (TypeScript).
 Analysiere den folgenden Frontend-Code und erstelle eine Payload CMS BLOCK Konfiguration (NICHT Collection!).
 
 Regeln:
-1. Nutze die korrekten Payload-Feldtypen (text, textarea, upload, etc.).
-2. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]'
-3. WICHTIG: Exportiere den Block EXAKT so: 
+1. Nutze die korrekten Payload-Feldtypen. 
+2. WICHTIG: Für Bilder nutze ZWINGEND { name: 'image', type: 'upload', relationTo: 'media' }.
+3. Mache keine Felder 'required: true', um Seeding-Fehler zu vermeiden.
+4. Der Slug des Blocks MUSS exakt so lauten: '[COMPONENT_NAME]'
+5. Exportiere den Block EXAKT so: 
 export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...] }
-4. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine Markdown-Formatierung (\`\`\`).
+6. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen.
+`
+
+const SYSTEM_PROMPT_SEED = `
+Analysiere den folgenden React-Code und extrahiere alle statischen Texte.
+Erstelle ein JSON-Objekt, das exakt zu den Feldern deines Payload-Blocks passt.
+
+WICHTIG: 
+1. Füge dem Objekt zwingend ein Feld "blockType" mit dem Wert "[COMPONENT_NAME]" hinzu.
+2. UPLOAD-FELDER: Wenn das TypeScript-Schema ein Feld vom Typ 'upload' (z. B. Bilder) enthält, MUSS der Wert in diesem JSON zwingend "null" sein! Keine URLs einfügen!
+3. LINK-FELDER: URLs müssen gültige Pfade sein (z.B. "/", "/kontakt" oder "https://...").
+4. Gib NUR das reine JSON zurück.
 `
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
