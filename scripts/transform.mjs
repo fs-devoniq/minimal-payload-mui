@@ -17,10 +17,19 @@ const SYSTEM_PROMPT_FRONTEND = `
 Du bist ein Senior Frontend Engineer. 
 WICHTIG: Erstelle eine Next.js Client Komponente ('use client').
 Konvertiere den Code zu 100% in Material UI (MUI).
+
+DYNAMISCHE DATEN (CMS READY):
+1. Analysiere den Code und identifiziere alle statischen Texte, Bilder, Links und Listen.
+2. Erstelle ein TypeScript-Interface namens '[COMPONENT_NAME]Props', das all diese Felder abbildet.
+3. Die Komponente MUSS diese Props akzeptieren: \`export default function [COMPONENT_NAME](props: [COMPONENT_NAME]Props)\`.
+4. Ersetze ALLE hardcodierten Inhalte im JSX durch die entsprechenden Variablen aus den Props.
+5. BILDER: Gehe davon aus, dass Bild-Props aus dem CMS als Objekt mit einer \`url\` Eigenschaft kommen (nutze z.B. \`props.image?.url || ''\`).
+6. Fallbacks: Nutze sinnvolle Fallbacks (z.B. \`props.title || 'Titel fehlt'\`), damit die Seite nicht crasht, wenn das CMS leere Felder schickt.
+
+MUI REGELN:
 1. Nutze Container, Grid, Box, Typography, Button von @mui/material.
-2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop oder entsprechende MUI-Komponenten ersetzt werden.
-3. Stelle sicher, dass ALLE MUI-Komponenten oben korrekt importiert werden.
-4. Gib NUR den reinen Code aus. Keine Markdown-Formatierung (\`\`\`).
+2. JEDE Tailwind Klasse muss entfernt und durch das 'sx' Prop ersetzt werden.
+3. Gib NUR den reinen TypeScript-Code zurück. Keine Erklärungen, keine \`\`\`.
 `
 
 const SYSTEM_PROMPT_BACKEND = `
@@ -38,14 +47,15 @@ export const [COMPONENT_NAME]: Block = { slug: '[COMPONENT_NAME]', fields: [...]
 `
 
 const SYSTEM_PROMPT_SEED = `
-Analysiere den folgenden React-Code und extrahiere alle statischen Texte.
+Analysiere den folgenden React-Code und extrahiere alle statischen Texte, Links und Bilder.
 Erstelle ein JSON-Objekt, das exakt zu den Feldern deines Payload-Blocks passt.
 
 WICHTIG: 
 1. Füge dem Objekt zwingend ein Feld "blockType" mit dem Wert "[COMPONENT_NAME]" hinzu.
-2. UPLOAD-FELDER: Wenn das TypeScript-Schema ein Feld vom Typ 'upload' (z. B. Bilder) enthält, MUSS der Wert in diesem JSON zwingend "null" sein! Keine URLs einfügen!
+2. UPLOAD-FELDER (DER MAGISCHE TRICK): Wenn das TypeScript-Schema ein Feld vom Typ 'upload' (z. B. Bilder) enthält, extrahiere die Bild-URL aus dem Code und gib EXAKT dieses Objekt anstelle eines Strings zurück: 
+   { "_isImage": true, "url": "HIER_DIE_URL_EINTRAGEN" }
 3. LINK-FELDER: URLs müssen gültige Pfade sein (z.B. "/", "/kontakt" oder "https://...").
-4. Gib NUR das reine JSON zurück.
+4. Gib NUR das reine JSON zurück. Keine Erklärungen.
 `
 
 // --- HELPER: PAYLOAD CONFIG UPDATER ---
