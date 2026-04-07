@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${IMAGE_REPO:-ghcr.io/your-org/minimal-payload-mui}:${GIT_COMMIT_HASH:-latest}
+    image: ${IMAGE_REPO}:${GIT_COMMIT_HASH:-latest}
     user: "0:0"
     networks:
       - frontend
@@ -11,16 +11,16 @@ services:
     depends_on:
       - db
     secrets:
-      - minimal-payload-mui_env
+      - ${STACK_NAME}_env
     volumes:
-      - minimal_payload_mui_app_uploads:/app/uploads
+      - ${STACK_NAME}_app_uploads:/app/uploads
 
   migrations:
-    image: ${IMAGE_REPO:-ghcr.io/your-org/minimal-payload-mui}:${GIT_COMMIT_HASH:-latest}-migrate
+    image: ${IMAGE_REPO}:${GIT_COMMIT_HASH:-latest}-migrate
     networks:
       - frontend
     secrets:
-      - minimal-payload-mui_env
+      - ${STACK_NAME}_env
     deploy:
       placement:
         constraints:
@@ -32,15 +32,15 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER_FILE: /run/secrets/minimal-payload-mui_db-user
-      POSTGRES_PASSWORD_FILE: /run/secrets/minimal-payload-mui_db-pw
-      POSTGRES_DB_FILE: /run/secrets/minimal-payload-mui_db-name
+      POSTGRES_USER_FILE: /run/secrets/${STACK_NAME}_db-user
+      POSTGRES_PASSWORD_FILE: /run/secrets/${STACK_NAME}_db-pw
+      POSTGRES_DB_FILE: /run/secrets/${STACK_NAME}_db-name
     secrets:
-      - minimal-payload-mui_db-user
-      - minimal-payload-mui_db-pw
-      - minimal-payload-mui_db-name
+      - ${STACK_NAME}_db-user
+      - ${STACK_NAME}_db-pw
+      - ${STACK_NAME}_db-name
     volumes:
-      - minimal_payload_mui_db:/var/lib/postgresql/data
+      - ${STACK_NAME}_db:/var/lib/postgresql/data
     networks:
       - frontend
     deploy:
@@ -57,15 +57,15 @@ networks:
     external: true
 
 volumes:
-  minimal_payload_mui_db:
-  minimal_payload_mui_app_uploads:
+  ${STACK_NAME}_db:
+  ${STACK_NAME}_app_uploads:
 
 secrets:
-  minimal-payload-mui_env:
+  ${STACK_NAME}_env:
     external: true
-  minimal-payload-mui_db-user:
+  ${STACK_NAME}_db-user:
     external: true
-  minimal-payload-mui_db-pw:
+  ${STACK_NAME}_db-pw:
     external: true
-  minimal-payload-mui_db-name:
+  ${STACK_NAME}_db-name:
     external: true

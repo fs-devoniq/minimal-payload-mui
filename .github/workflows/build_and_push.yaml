@@ -27,8 +27,8 @@ jobs:
       - name: Get Meta
         id: meta
         run: |
-          echo REPO_NAME=$(echo ${GITHUB_REPOSITORY} | awk -F"/" '{print $2}') >> $GITHUB_OUTPUT    
-          echo REPO_VERSION=$(git describe --tags --always | sed 's/^v//') >> $GITHUB_OUTPUT
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+          echo "IMAGE_REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -38,8 +38,8 @@ jobs:
           target: runner
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.REPO_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.REPO_NAME }}:${{ github.sha }}
+            ${{ steps.meta.outputs.IMAGE_REPO }}:latest
+            ${{ steps.meta.outputs.IMAGE_REPO }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -51,8 +51,8 @@ jobs:
           target: migration
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.REPO_NAME }}:migrate-latest
-            ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.REPO_NAME }}:${{ github.sha }}-migrate
+            ${{ steps.meta.outputs.IMAGE_REPO }}:migrate-latest
+            ${{ steps.meta.outputs.IMAGE_REPO }}:${{ github.sha }}-migrate
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -67,8 +67,8 @@ jobs:
       - name: Get Meta
         id: meta
         run: |
-          echo REPO_NAME=$(echo ${GITHUB_REPOSITORY} | awk -F"/" '{print $2}') >> $GITHUB_OUTPUT    
-          echo REPO_VERSION=$(git describe --tags --always | sed 's/^v//') >> $GITHUB_OUTPUT
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+          echo "IMAGE_REPO=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Login to the Container registry
         uses: docker/login-action@v3
@@ -86,7 +86,8 @@ jobs:
         env:
           DOCKER_HOST: "ssh://deploy@87.106.232.205"
           GIT_COMMIT_HASH: ${{ github.sha }}
-          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/${{ steps.meta.outputs.REPO_NAME }}
+          STACK_NAME: ${{ steps.meta.outputs.REPO_NAME }}
+          IMAGE_REPO: ${{ steps.meta.outputs.IMAGE_REPO }}
           DOCKER_PULL_USERNAME: ${{ secrets.DOCKER_PULL_USERNAME }}
           DOCKER_PULL_SECRET: ${{ secrets.DOCKER_PULL_SECRET }}
         run: |
@@ -95,13 +96,13 @@ jobs:
           docker pull "${IMAGE_REPO}:${GIT_COMMIT_HASH}"
           docker pull "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate"
 
-          docker stack deploy -c stack.yaml --with-registry-auth minimal-payload-mui
-          docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate" minimal-payload-mui_migrations
-          docker service scale --detach=true minimal-payload-mui_migrations=1
+          docker stack deploy -c stack.yaml --with-registry-auth $STACK_NAME
+          docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate" ${STACK_NAME}_migrations
+          docker service scale --detach=true ${STACK_NAME}_migrations=1
 
           MIGRATION_OK=0
           for i in $(seq 1 60); do
-            STATE=$(docker service ps minimal-payload-mui_migrations --no-trunc --format '{{.CurrentState}}|{{.Error}}' | head -n 1)
+            STATE=$(docker service ps ${STACK_NAME}_migrations --no-trunc --format '{{.CurrentState}}|{{.Error}}' | head -n 1)
             echo "migrate-state: $STATE"
 
             if echo "$STATE" | grep -q '^Complete'; then
@@ -112,8 +113,8 @@ jobs:
 
             if echo "$STATE" | grep -Eq '^(Failed|Rejected|Shutdown)'; then
               echo "Migration service failed."
-              docker service logs minimal-payload-mui_migrations || true
-              docker service scale --detach=true minimal-payload-mui_migrations=0 || true
+              docker service logs ${STACK_NAME}_migrations || true
+              docker service scale --detach=true ${STACK_NAME}_migrations=0 || true
               exit 1
             fi
 
@@ -122,10 +123,10 @@ jobs:
 
           if [ "$MIGRATION_OK" -ne 1 ]; then
             echo "Migration did not finish in time."
-            docker service logs minimal-payload-mui_migrations || true
-            docker service scale --detach=true minimal-payload-mui_migrations=0 || true
+            docker service logs ${STACK_NAME}_migrations || true
+            docker service scale --detach=true ${STACK_NAME}_migrations=0 || true
             exit 1
           fi
 
-          docker service scale --detach=true minimal-payload-mui_migrations=0
-          docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}" minimal-payload-mui_app
+          docker service scale --detach=true ${STACK_NAME}_migrations=0
+          docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}" ${STACK_NAME}_app
