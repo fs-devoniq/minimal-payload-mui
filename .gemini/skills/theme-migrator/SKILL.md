@@ -13,13 +13,17 @@ Deine Aufgabe ist es, das Design-System (hauptsächlich die Farben) aus dem Quel
 Führe diese Schritte sequenziell aus:
 
 ### Schritt 1: Quell-Theme analysieren (Farben, Fonts & Design-Tokens)
-Suche im übergebenen Quellprojekt nach der Theme-Konfiguration (oft in `tailwind.config.js`, `tailwind.config.ts`, `src/theme.ts` oder CSS-Dateien).
+Suche im übergebenen Quellprojekt nach der Theme-Konfiguration. Da das Projekt oft in Next.js und MUI (z.B. über AI Studio) generiert wurde, suche primär in den MUI-Theme-Dateien:
+1. **`src/theme/index.ts`** oder **`src/theme.ts`** (Hier sind meist die MUI Palette und Typografie definiert).
+2. **`tailwind.config.js`** / **`tailwind.config.ts`** (Falls doch Tailwind genutzt wurde).
+3. **Globalen CSS-Dateien** wie `app/globals.css` oder `src/app/globals.css` (Manchmal generiert AI Studio hier CSS-Variablen wie `--primary` oder `--secondary`, die im Code referenziert werden).
+4. `app/layout.tsx` oder `src/app/layout.tsx` (für Font-Deklarationen).
 
 Extrahiere:
-1. **Farbwerte:** Primary, Secondary, Background, Text, Statusfarben.
+1. **Farbwerte:** Primary, Secondary, Background, Text, Statusfarben (sowohl aus dem MUI-Theme-Objekt als auch eventuelle CSS-Variablen).
 2. **Schriftarten (Fonts):** Welche Schriftfamilien werden genutzt?
 3. **Design-Tokens (Shapes & Spacing):** 
-   - Welchen **Border-Radius** nutzen Buttons, Cards und Container? (Suche nach `borderRadius` oder Tailwind `rounded-*` Klassen).
+   - Welchen **Border-Radius** nutzen Buttons, Cards und Container?
    - Gibt es spezifische globale Abstände (Spacing)?
 
 ### Schritt 2: Fonts migrieren (Ersetzung der Standardschriften)
