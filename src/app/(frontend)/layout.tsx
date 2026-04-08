@@ -3,9 +3,23 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter'
 import './styles.css'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { ThemeClientProvider } from '@/components/ThemeClientProvider'
 import { ThemeColors } from '@/theme'
+
+export async function generateViewport(): Promise<Viewport> {
+  try {
+    const payload = await getPayload({ config })
+    const settings = await payload.findGlobal({ slug: 'settings' })
+    return {
+      themeColor: settings?.themeColor || '#000000',
+    }
+  } catch (error) {
+    return {
+      themeColor: '#000000',
+    }
+  }
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -46,7 +60,6 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       description: defaultDescription,
       keywords: settings?.defaultKeywords?.map((k) => k.keyword) || [],
-      themeColor: settings?.themeColor || '#000000',
       robots: {
         index: !settings?.noIndex,
         follow: !settings?.noFollow,

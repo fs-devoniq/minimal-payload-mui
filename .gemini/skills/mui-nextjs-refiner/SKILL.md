@@ -19,6 +19,7 @@ Führe diese Anpassungen durch:
   - Verwende `primary.main`, `secondary.main`, `primary.light`, `secondary.dark` etc. für Akzente.
   - Verwende `background.default` oder `background.paper` für Hintergründe.
   - Verwende `text.primary` oder `text.secondary` für Schriften.
+  - **Spezial-Farben:** Falls eine Vibe-Farbe absolut nicht in die Standard-Kategorien passt, nutze das `custom`-Objekt der Palette (z.B. `sx={{ color: 'custom.lightGrey' }}` oder die Farbe, die der Theme-Migrator dort hinterlegt hat).
   - *Beispiel:* Aus `<Box sx={{ bgcolor: '#F9F7F2' }}>` wird `<Box sx={{ bgcolor: 'background.default' }}>`.
 
 ### 2. ⚡ Next.js Optimierungen

@@ -25,7 +25,9 @@ Extrahiere daraus die wichtigsten Farbwerte:
 - **Statusfarben** (Success, Error - falls vorhanden, sonst belasse die MUI-Defaults)
 
 ### Schritt 2: MUI Base Theme aktualisieren
-Öffne die Datei `src/theme/base.ts` im Zielprojekt und überschreibe das `palette`-Objekt mit den extrahierten Farben. Behalte die Struktur von MUI bei.
+Öffne die Datei `src/theme/base.ts` im Zielprojekt und aktualisiere das `palette`-Objekt mit den extrahierten Farben. Behalte die Struktur von MUI bei.
+- **🚨 WICHTIG (Absturz-Gefahr):** Das MUI Theme im Zielprojekt besitzt unter `palette` ein Objekt namens `custom` (z.B. für `lightGrey`, `black` etc.). Du darfst dieses `custom`-Objekt **niemals überschreiben oder löschen**, da sonst das Frontend abstürzt (z.B. bei der Custom-Scrollbar in `cssBaseline.ts`). Du MUSST bestehende Eigenschaften mit einem Spread-Operator (`...`) oder durch vorsichtiges Mergen erhalten.
+- **Erweitern:** Wenn das Quellprojekt Farben hat, die absolut nicht in die Standard-Kategorien (primary, secondary, background, text, success, error) passen, **füge diese als neue Eigenschaften dem `custom`-Objekt hinzu** (z.B. `brandYellow: '#f5d429'`).
 
 ### Schritt 3: Payload Settings Defaults aktualisieren
 Öffne die Datei `src/globals/Settings.ts` im Zielprojekt.
