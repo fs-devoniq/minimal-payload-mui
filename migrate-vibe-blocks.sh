@@ -3,6 +3,7 @@
 # --- EINSTELLUNGEN ---
 SHOW_THOUGHTS=false
 VIBE_DIR=""
+START_TIME=$(date +%s)
 
 # --- ARGUMENT-PARSING ---
 while [[ "$#" -gt 0 ]]; do
@@ -201,4 +202,11 @@ fi
 
 echo -e "\n${C_GREEN}=======================================================${C_RESET}"
 echo -e "${C_GREEN}🎉 MIGRATION KOMPLETT ABGESCHLOSSEN!${C_RESET}"
+
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+MINUTES=$((DURATION / 60))
+SECONDS=$((DURATION % 60))
+
+echo -e "${C_CYAN}⏱️  Dauer: ${MINUTES} Minuten und ${SECONDS} Sekunden${C_RESET}"
 echo -e "${C_GREEN}=======================================================${C_RESET}\n"
