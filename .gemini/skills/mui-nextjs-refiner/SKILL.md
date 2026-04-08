@@ -14,13 +14,15 @@ Deine Aufgabe ist es NICHT, die Komponente neu zu schreiben, sondern sie für un
 Führe diese Anpassungen durch:
 
 ### 1. 🎨 Theme & Farben Mapping (WICHTIGSTES ZIEL)
-- **Problem:** Externe Tools generieren oft hardcodierte Hex- oder RGB-Werte (z.B. `bgcolor: '#25451E'`, `color: '#A3E635'`). Dies zerstört unsere dynamische Theme-Steuerung über das Payload CMS.
+- **Problem:** Externe Tools generieren oft hardcodierte Hex- oder RGB-Werte (z.B. `bgcolor: '#25451E'`, `color: '#A3E635'`). Dies zerstört unsere dynamische Theme-Steuerung über das Payload CMS. **Es dürfen absolut KEINE hardcodierten Farbwerte im Code verbleiben!**
 - **Lösung:** Mappe JEDEN hardcodierten Farbwert logisch auf unser MUI-Theme.
-  - Verwende `primary.main`, `secondary.main`, `primary.light`, `secondary.dark` etc. für Akzente.
-  - Verwende `background.default` oder `background.paper` für Hintergründe.
-  - Verwende `text.primary` oder `text.secondary` für Schriften.
-  - **Spezial-Farben:** Falls eine Vibe-Farbe absolut nicht in die Standard-Kategorien passt, nutze das `custom`-Objekt der Palette (z.B. `sx={{ color: 'custom.lightGrey' }}` oder die Farbe, die der Theme-Migrator dort hinterlegt hat).
-  - *Beispiel:* Aus `<Box sx={{ bgcolor: '#F9F7F2' }}>` wird `<Box sx={{ bgcolor: 'background.default' }}>`.
+  - Verwende primär `primary.main`, `secondary.main`, `background.default`, `text.primary` etc.
+  - **Spezial-Farben (Erweiterung des Themes):** Falls die Komponente eine spezifische Farbe aus der Vorlage nutzt, die noch nicht im aktuellen Theme (`src/theme/base.ts`) existiert, DARFST du sie NICHT hardcoden. Stattdessen musst du das gesamte System erweitern, damit diese Farbe über das CMS editierbar bleibt:
+    1. **Basis Theme erweitern:** Öffne `src/theme/base.ts` und füge die neue Farbe dem `custom`-Objekt der Palette hinzu (z.B. `custom.cardBg: '#25451E'`).
+    2. **CMS (Settings.ts) erweitern:** Öffne `src/globals/Settings.ts`. Füge innerhalb der `colors`-Gruppe im `Branding`-Tab ein neues Farbfeld für diese Farbe hinzu (inklusive `defaultValue`).
+    3. **Theme Logic (index.ts) anpassen:** Öffne `src/theme/index.ts`. Füge die Farbe in das Interface `ThemeColors` ein und mappe sie innerhalb von `createAppTheme` in das `dynamicPalette.custom` Objekt, damit der CMS-Wert den Basiswert überschreibt.
+    4. **Layout Mapper anpassen:** Öffne `src/app/(frontend)/layout.tsx` und füge die neue Farbe beim Generieren des `themeColors` Objekts (unter `// Theme colors mapping`) hinzu (z.B. `cardBg: settings.colors.cardBg`).
+    5. **Im Code nutzen:** Verwende ab sofort die neue Theme-Variable in der MUI-Komponente: `<Box sx={{ bgcolor: 'custom.cardBg' }}>`.
 
 ### 2. ⚡ Next.js Optimierungen
 - **Links:** Falls Standard-HTML `<a>` Tags oder MUI `<Link>` ohne Next.js Wrapper verwendet werden, ändere dies zu:

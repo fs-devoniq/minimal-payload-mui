@@ -47,15 +47,31 @@ Wenn du Schriftarten im Quellprojekt gefunden hast (z.B. in der `tailwind.config
 
 ### Schritt 3: MUI Base Theme aktualisieren (Farben & Design-Tokens)
 Öffne die Datei `src/theme/base.ts` im Zielprojekt und aktualisiere das `baseThemeOptions` Objekt:
-- **Palette:** Farben mergen (bestehendes `custom` Objekt erhalten!).
+- **Erfasse ALLE Farben** aus der Vorlage (Primary, Secondary, Backgrounds, Text, und alle speziellen Akzentfarben).
+- **MUI Standardfarben:** Mappe die Hauptfarben auf die Standardkategorien (`primary.main`, `secondary.main`, `background.default`, `background.paper`, `text.primary` etc.).
+- **Custom Colors:** Wenn die Standard-MUI-Kategorien nicht ausreichen, füge ALLE weiteren Farben zwingend dem `custom`-Objekt in der Palette hinzu (z.B. `custom.brandAccent: '#...'`, `custom.borderLight: '#...'`). **Achte darauf, dass keine einzige Farbe aus der Vorlage verloren geht.**
 - **Global Shapes:** Setze den globalen `shape.borderRadius` Wert basierend auf der Vorlage.
 - **Component Defaults:** Falls die Vorlage z.B. alle Buttons mit einer bestimmten Rundung oder Padding versieht, lege dies in `components.MuiButton.defaultProps` oder `styleOverrides` fest.
 
-### Schritt 4: Payload Settings Defaults aktualisieren
+### Schritt 4: Payload Settings aktualisieren (CMS-Steuerung für ALLE Farben)
 Öffne die Datei `src/globals/Settings.ts` im Zielprojekt.
-Suche dort nach dem `Branding`-Tab und den Farbfeldern (`primary`, `secondary`, `backgroundDefault`, etc.).
-Ersetze die `defaultValue`-Attribute dieser Felder mit den entsprechenden Hex-/RGBA-Werten aus dem Quellprojekt. Dadurch ist das CMS von Anfang an mit dem korrekten Brand-Design vorausgefüllt.
+Suche dort nach dem `Branding`-Tab und der `colors` Gruppe (die Farbfelder wie `primary`, `secondary`, etc. enthält).
+1. Ersetze die `defaultValue`-Attribute dieser bestehenden Felder mit den entsprechenden Werten aus dem Quellprojekt.
+2. **WICHTIG:** Für JEDE neue Farbe, die du unter `custom` in `base.ts` hinzugefügt hast, MUSST du hier in `Settings.ts` innerhalb der `colors` Gruppe (als neues Objekt in einem `row`-Array) ein neues Payload-Farbfeld hinzufügen. Nutze den gleichen Key wie in `base.ts` (z.B. name: 'brandAccent') und setze den `defaultValue`.
 
-### Schritt 5: Abschluss
+### Schritt 5: Dynamische Theme-Generierung (src/theme/index.ts) anpassen
+Wenn du Custom-Farben in Schritt 3 und 4 hinzugefügt hast, musst du sicherstellen, dass diese vom CMS ins Theme durchgereicht werden.
+Öffne `src/theme/index.ts`:
+1. Erweitere das Interface `ThemeColors` um die neuen Custom-Farb-Keys (z.B. `brandAccent?: string | null`).
+2. Passe das `dynamicPalette` Objekt in der Funktion `createAppTheme` an, damit die neuen Custom-Farben beim Start ins `custom`-Objekt der Palette gemerged werden.
+   *Beispiel:*
+   ```tsx
+   custom: {
+     ...(basePalette as any).custom,
+     ...(colors?.brandAccent ? { brandAccent: colors.brandAccent } : {}),
+   }
+   ```
+
+### Schritt 6: Abschluss
 Überspringe das Ausführen von Linting oder Type-Checks (kein `eslint`, kein `tsc`), da dies am Ende des globalen Scripts vom Validator erledigt wird.
 Gib eine kurze Erfolgsmeldung zurück.
