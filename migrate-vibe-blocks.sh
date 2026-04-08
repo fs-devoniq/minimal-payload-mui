@@ -142,7 +142,7 @@ for BLOCK_DIR in "${BLOCK_DIRS[@]}"; do
     if [ -f "$FILE_PATH" ]; then
       
       PROMPT="Migriere die Komponente '$BLOCK_NAME' aus der Datei $FILE_PATH.
-      Schritt 1: Aktiviere den Skill 'nextjs-mui-converter' und wandle den Code der Datei in eine saubere MUI-Komponente für Next.js um. Speichere diese in src/components/$BLOCK_NAME/index.tsx.
+      Schritt 1: Aktiviere den Skill 'mui-nextjs-refiner' und bereinige die MUI-Komponente (Theme-Farben mappen, Next.js Bilder/Links anpassen). Speichere diese in src/components/$BLOCK_NAME/index.tsx.
       Schritt 2: Aktiviere danach den Skill 'payload-block-generator' für die gerade erstellte Komponente. Erstelle die Block-Konfiguration in src/blocks/$BLOCK_NAME/config.ts, registriere den Block in src/collections/Pages.ts und integriere das Rendering in src/components/PageTemplate.tsx.
       
       WICHTIG FÜR GESCHWINDIGKEIT: 
