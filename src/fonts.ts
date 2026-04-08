@@ -1,13 +1,13 @@
-import localFont from 'next/font/local'
+import { Red_Hat_Display, Unbounded } from 'next/font/google'
 
-export const redHatDisplay = localFont({
-  src: '../../../public/fonts/Red_Hat_Display/RedHatDisplay-VariableFont_wght.ttf',
+export const redHatDisplay = Red_Hat_Display({
+  subsets: ['latin'],
   variable: '--font-red-hat-display',
   display: 'swap',
 })
 
-export const unbounded = localFont({
-  src: '../../../public/fonts/Unbounded/Unbounded-VariableFont_wght.ttf',
+export const unbounded = Unbounded({
+  subsets: ['latin'],
   variable: '--font-unbounded',
   display: 'swap',
 })
