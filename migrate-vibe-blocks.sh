@@ -97,8 +97,8 @@ if [ "$TOTAL_BLOCKS" -eq 0 ]; then
   exit 0
 fi
 
-# Gesamtschritte = Blöcke + Globals + Validator
-TOTAL_STEPS=$((TOTAL_BLOCKS + 2))
+# Gesamtschritte = Theme + Blöcke + Globals + Validator
+TOTAL_STEPS=$((TOTAL_BLOCKS + 3))
 CURRENT_STEP=0
 CURRENT_BLOCK=0
 
@@ -110,7 +110,23 @@ if [ "$SHOW_THOUGHTS" = false ]; then
     echo -e "🤫 Silent Mode aktiv (Details in .gemini-migration.log. Nutze -v für Gemini-Gedanken)\n"
 fi
 
-# --- 3. LOOP FÜR ALLE EINZELNEN BLÖCKE ---
+# --- 3. THEME MIGRATION ---
+CURRENT_STEP=$((CURRENT_STEP + 1))
+echo ""
+draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+echo -e "🎨 Verarbeite Theme & Farben..."
+
+THEME_PROMPT="Aktiviere den Skill 'theme-migrator'. Analysiere das Vibe-Projekt unter dem Pfad $VIBE_DIR und migriere die Farben in unser MUI Base Theme und in die Payload Settings."
+
+run_gemini "$THEME_PROMPT"
+
+if [ $? -ne 0 ]; then
+  echo -e "${C_YELLOW}⚠️ Fehler bei der Migration des Themes. Nutze Fallback-Farben.${C_RESET}"
+else
+  echo -e "${C_GREEN}✅ Theme und Farben erfolgreich migriert.${C_RESET}"
+fi
+
+# --- 4. LOOP FÜR ALLE EINZELNEN BLÖCKE ---
 for BLOCK_DIR in "${BLOCK_DIRS[@]}"; do
     BLOCK_NAME=$(basename "$BLOCK_DIR")
     FILE_PATH="$BLOCK_DIR/index.tsx"
