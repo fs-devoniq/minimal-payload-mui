@@ -17,8 +17,13 @@ Führe exakt diese 4 Schritte aus:
    - Lege für alle variablen Elemente (z. B. Logo, Navigations-Links, Social-Media-Links, Copyright-Texte) die passenden Payload-Felder an.
    - **Wichtig:** Verwende die aktuellen statischen Inhalte aus dem Input-Code als `defaultValue`, damit das Global im CMS sofort vorausgefüllt ist.
 
-2. **Frontend-Komponente anpassen (`src/components/...`):**
-   - Passe die React-Komponente so an, dass sie die typisierten Payload-Daten als Props entgegennimmt, anstatt die hardcodierten Werte zu nutzen. 
+2. **Frontend-Komponente anpassen & Logik migrieren (`src/components/...`):**
+   - Passe die React-Komponente so an, dass sie die typisierten Payload-Daten als Props entgegennimmt, anstatt die hardcodierten Werte zu nutzen.
+   - **WICHTIG (Logik-Migration):** Suche in der Quell-Datei (z.B. `App.tsx`) nach funktionaler Logik, die mit dieser Komponente zusammenhängt. Dazu gehören:
+     - **Scroll-Logik:** z.B. `useEffect` mit Scroll-Event-Listenern für transparente/farbige Navbars.
+     - **UI-State:** z.B. `useState` für das Öffnen/Schließen von Mobile-Menüs.
+     - **Interaktive Hooks:** Alle Hooks, die das Verhalten der Komponente steuern.
+   - Integriere diese Logik direkt in die neue MUI-Komponente im Zielprojekt. Nutze dafür moderne React-Hooks (`useState`, `useEffect`, `useScrollTrigger` von MUI, etc.).
 
 3. **Payload Config Update (`src/payload.config.ts`):**
    - Generiere das Snippet, das zeigt, wie das neue Global in die Hauptkonfiguration von Payload (im `globals`-Array) importiert und registriert wird.
