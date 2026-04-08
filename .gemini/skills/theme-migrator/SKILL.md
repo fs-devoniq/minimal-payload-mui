@@ -22,22 +22,34 @@ Extrahiere:
    - Welchen **Border-Radius** nutzen Buttons, Cards und Container? (Suche nach `borderRadius` oder Tailwind `rounded-*` Klassen).
    - Gibt es spezifische globale Abstände (Spacing)?
 
-### Schritt 2: Fonts in Next.js integrieren
-Wenn du Schriftarten gefunden hast, die über Google Fonts verfügbar sind:
-1. Erstelle oder aktualisiere die Datei `src/fonts.ts` (oder `src/app/(frontend)/layout.tsx`, falls `fonts.ts` nicht existiert).
-2. Nutze `next/font/google`, um die Schriften zu importieren. Konfiguriere sie mit CSS-Variablen. Beispiel:
-```tsx
-import { Inter } from 'next/font/google';
-export const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-```
-3. Binde die Klasse/Variable im Root-Layout (`<body>`) ein, damit sie global verfügbar ist.
+### Schritt 2: Fonts migrieren (Ersetzung der Standardschriften)
+Wenn du Schriftarten im Quellprojekt gefunden hast (z.B. in der `tailwind.config` oder `theme.ts` unter `fontFamily`):
 
-### Schritt 3: MUI Base Theme aktualisieren (Farben, Typografie & Global Styles)
+1. **src/fonts.ts aktualisieren:**
+   - Entferne die vorhandenen Standard-Schriften (z.B. `Red_Hat_Display`, `Unbounded`).
+   - Importiere die neuen Schriften aus `next/font/google`.
+   - Konfiguriere sie mit passenden CSS-Variablen.
+   - *Beispiel:*
+     ```tsx
+     import { Inter, Montserrat } from 'next/font/google';
+     export const primaryFont = Inter({ subsets: ['latin'], variable: '--font-primary' });
+     export const secondaryFont = Montserrat({ subsets: ['latin'], variable: '--font-secondary' });
+     ```
+
+2. **Root-Layout (src/app/(frontend)/layout.tsx) anpassen:**
+   - Importiere die neuen Font-Objekte aus `@/fonts`.
+   - Füge die `.variable` Klassen der Schriften zum `<body>` Tag hinzu, damit die CSS-Variablen global verfügbar sind.
+   - *Beispiel:* `<body className={`${primaryFont.variable} ${secondaryFont.variable}`}>`
+
+3. **MUI Base Theme (src/theme/base.ts) aktualisieren:**
+   - Nutze im `typography` Objekt die neuen CSS-Variablen.
+   - *Beispiel:* `fontFamily: ['var(--font-primary)', 'sans-serif'].join(',')`
+
+### Schritt 3: MUI Base Theme aktualisieren (Farben & Design-Tokens)
 Öffne die Datei `src/theme/base.ts` im Zielprojekt und aktualisiere das `baseThemeOptions` Objekt:
 - **Palette:** Farben mergen (bestehendes `custom` Objekt erhalten!).
-- **Typography:** Schriften einbinden.
 - **Global Shapes:** Setze den globalen `shape.borderRadius` Wert basierend auf der Vorlage.
-- **Component Defaults:** Falls die Vorlage z.B. alle Buttons mit einer bestimmten Rundung oder Padding versieht, lege dies in `components.MuiButton.defaultProps` oder `styleOverrides` fest, damit es global für alle MUI-Buttons im Projekt gilt.
+- **Component Defaults:** Falls die Vorlage z.B. alle Buttons mit einer bestimmten Rundung oder Padding versieht, lege dies in `components.MuiButton.defaultProps` oder `styleOverrides` fest.
 
 ### Schritt 4: Payload Settings Defaults aktualisieren
 Öffne die Datei `src/globals/Settings.ts` im Zielprojekt.
