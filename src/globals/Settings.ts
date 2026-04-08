@@ -18,6 +18,12 @@ export const Settings: GlobalConfig = {
               required: true,
             },
             {
+              name: 'homePage',
+              type: 'relationship',
+              relationTo: 'pages',
+              required: true,
+            },
+            {
               name: 'siteUrl',
               type: 'text',
               required: true,
