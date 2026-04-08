@@ -20,6 +20,10 @@ Führe diese Aufgabe aus:
   - **HINTERGRÜNDE & TEXT:** Nutze für Backgrounds `background.default` oder `background.paper`. Nutze für Texte `text.primary`, `text.secondary` oder `text.disabled`.
   - **SYNTAX:** Wende diese Theme-Farben sauber über die `sx`-Prop an (z. B. `sx={{ bgcolor: 'background.paper', color: 'text.secondary' }}`).
 
+- **🆔 WICHTIG - Anker-Links (IDs):**
+  - Jede Komponente MUSS eine `id` als optionales Prop akzeptieren (z.B. `id?: string`).
+  - Diese `id` MUSS zwingend am äußersten Wrapper-Element (z.B. `Box`, `section`, `Container`) der Komponente gesetzt werden (`<Box id={id} ...>`), damit Anker-Links funktionieren.
+
 - **🚨 WICHTIG - MUI Grid Import & Syntax:**
   - **IMPORT:** Verwende IMMER exakt `import { Grid } from '@mui/material';` (oder `import Grid from '@mui/material/Grid';`).
   - **VERBOTEN IM IMPORT:** Importiere NIEMALS `Grid2`, `Unstable_Grid2` oder `GridLegacy`. Nutze NIEMALS Aliase wie `Grid2 as Grid`.
