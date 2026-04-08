@@ -126,6 +126,80 @@ export const Settings: GlobalConfig = {
           label: 'Branding',
           fields: [
             {
+              name: 'colors',
+              type: 'group',
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'primary',
+                      type: 'text',
+                      defaultValue: '#90FF00',
+                      admin: { width: '50%' },
+                    },
+                    {
+                      name: 'secondary',
+                      type: 'text',
+                      defaultValue: 'rgba(171, 234, 255, 0.08)',
+                      admin: { width: '50%' },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'backgroundDefault',
+                      type: 'text',
+                      defaultValue: '#050810',
+                      admin: { width: '50%' },
+                    },
+                    {
+                      name: 'backgroundPaper',
+                      type: 'text',
+                      defaultValue: 'rgba(255, 255, 255, 0.01)',
+                      admin: { width: '50%' },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'textPrimary',
+                      type: 'text',
+                      defaultValue: '#DBE9FF',
+                      admin: { width: '50%' },
+                    },
+                    {
+                      name: 'textSecondary',
+                      type: 'text',
+                      defaultValue: '#90FF00',
+                      admin: { width: '50%' },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'success',
+                      type: 'text',
+                      defaultValue: '#90FF00',
+                      admin: { width: '50%' },
+                    },
+                    {
+                      name: 'error',
+                      type: 'text',
+                      defaultValue: '#ff1744',
+                      admin: { width: '50%' },
+                    },
+                  ],
+                },
+              ],
+            },
+            {
               name: 'favicon',
               type: 'upload',
               relationTo: 'media',

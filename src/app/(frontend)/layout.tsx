@@ -1,12 +1,11 @@
 import React from 'react'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter'
-import { ThemeProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import { theme } from '@/theme'
 import './styles.css'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Metadata } from 'next'
+import { ThemeClientProvider } from '@/components/ThemeClientProvider'
+import { ThemeColors } from '@/theme'
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -19,7 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
     const defaultDescription = settings?.defaultDescription || 'A minimal Payload Next.js template.'
     const siteUrl = settings?.siteUrl || process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
 
-    // Extract images correctly if they are objects
     const defaultOgImageUrl =
       settings?.defaultOgImage && typeof settings.defaultOgImage === 'object' && 'url' in settings.defaultOgImage
         ? settings.defaultOgImage.url
@@ -55,9 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       verification: {
         google: settings?.googleSiteVerification || undefined,
-        other: settings?.bingSiteVerification
-          ? { 'msvalidate.01': settings.bingSiteVerification }
-          : undefined,
+        other: settings?.bingSiteVerification ? { 'msvalidate.01': settings.bingSiteVerification } : undefined,
       },
       openGraph: {
         title: defaultTitle,
@@ -92,11 +88,27 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
-  // Fetch settings for JSON-LD structured data injection in HTML
   let schemaJsonLd = ''
+  let themeColors: ThemeColors | null = null
+
   try {
     const payload = await getPayload({ config })
     const settings = await payload.findGlobal({ slug: 'settings' })
+
+    // Theme colors mapping
+    if (settings?.colors) {
+      themeColors = {
+        primary: settings.colors.primary,
+        secondary: settings.colors.secondary,
+        backgroundDefault: settings.colors.backgroundDefault,
+        backgroundPaper: settings.colors.backgroundPaper,
+        textPrimary: settings.colors.textPrimary,
+        textSecondary: settings.colors.textSecondary,
+        success: settings.colors.success,
+        error: settings.colors.error,
+      }
+    }
+
     const rawSchemaJsonLd = settings?.schemaJsonLd
     if (typeof rawSchemaJsonLd === 'string') {
       schemaJsonLd = rawSchemaJsonLd
@@ -114,10 +126,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaJsonLd }} />
         ) : null}
         <AppRouterCacheProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
+          <ThemeClientProvider colors={themeColors}>
             <main>{children}</main>
-          </ThemeProvider>
+          </ThemeClientProvider>
         </AppRouterCacheProvider>
       </body>
     </html>

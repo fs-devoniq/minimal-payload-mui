@@ -417,6 +417,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 export interface Setting {
   id: number;
   siteName: string;
+  homePage: number | Page;
   /**
    * Used for canonical and Open Graph URLs.
    */
@@ -447,6 +448,16 @@ export interface Setting {
   noFollow?: boolean | null;
   googleSiteVerification?: string | null;
   bingSiteVerification?: string | null;
+  colors?: {
+    primary?: string | null;
+    secondary?: string | null;
+    backgroundDefault?: string | null;
+    backgroundPaper?: string | null;
+    textPrimary?: string | null;
+    textSecondary?: string | null;
+    success?: string | null;
+    error?: string | null;
+  };
   favicon?: (number | null) | Media;
   appleTouchIcon?: (number | null) | Media;
   safariPinnedTabIcon?: (number | null) | Media;
@@ -466,6 +477,7 @@ export interface Setting {
  */
 export interface SettingsSelect<T extends boolean = true> {
   siteName?: T;
+  homePage?: T;
   siteUrl?: T;
   defaultTitle?: T;
   titleTemplate?: T;
@@ -484,6 +496,18 @@ export interface SettingsSelect<T extends boolean = true> {
   noFollow?: T;
   googleSiteVerification?: T;
   bingSiteVerification?: T;
+  colors?:
+    | T
+    | {
+        primary?: T;
+        secondary?: T;
+        backgroundDefault?: T;
+        backgroundPaper?: T;
+        textPrimary?: T;
+        textSecondary?: T;
+        success?: T;
+        error?: T;
+      };
   favicon?: T;
   appleTouchIcon?: T;
   safariPinnedTabIcon?: T;
