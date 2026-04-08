@@ -114,7 +114,7 @@ fi
 # --- 3. THEME MIGRATION ---
 CURRENT_STEP=$((CURRENT_STEP + 1))
 echo ""
-draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+draw_progress "Gesamtfortschritt:" $CURRENT_STEP $TOTAL_STEPS
 echo -e "🎨 Verarbeite Theme & Farben..."
 
 THEME_PROMPT="Aktiviere den Skill 'theme-migrator'. Analysiere das Vibe-Projekt unter dem Pfad $VIBE_DIR und migriere die Farben in unser MUI Base Theme und in die Payload Settings."
@@ -136,7 +136,7 @@ for BLOCK_DIR in "${BLOCK_DIRS[@]}"; do
     CURRENT_BLOCK=$((CURRENT_BLOCK + 1))
 
     echo ""
-    draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+    draw_progress "Gesamtfortschritt:" $CURRENT_STEP $TOTAL_STEPS
     draw_progress "Komponenten:  " $CURRENT_BLOCK $TOTAL_BLOCKS
     echo -e "📦 Verarbeite Block: ${C_YELLOW}$BLOCK_NAME${C_RESET}"
 
@@ -165,7 +165,7 @@ done
 # --- 4. GLOBALE ELEMENTE (NAVBAR & FOOTER) ---
 CURRENT_STEP=$((CURRENT_STEP + 1))
 echo ""
-draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+draw_progress "Gesamtfortschritt:" $CURRENT_STEP $TOTAL_STEPS
 echo -e "🌐 Verarbeite Globale Elemente (Header/Footer)..."
 
 GLOBAL_PROMPT="Aktiviere den Skill 'payload-globals-generator'. 
@@ -187,7 +187,7 @@ fi
 # --- 5. VALIDATOR ---
 CURRENT_STEP=$((CURRENT_STEP + 1))
 echo ""
-draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+draw_progress "Gesamtfortschritt:" $CURRENT_STEP $TOTAL_STEPS
 echo -e "🧹 Führe den Post-Migration Validator aus (Linting, Typen, Auto-Fixing)..."
 
 VALIDATOR_PROMPT="Aktiviere den Skill 'post-migration-validator'. Führe die dort definierten Schritte (Prettier, ESLint mit --fix, tsc --noEmit) aus und behebe eventuell verbleibende Code- oder Typfehler, die während der Migration entstanden sind."
