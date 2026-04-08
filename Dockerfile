@@ -6,18 +6,14 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Enable pnpm
-RUN corepack enable pnpm
-
-# Install dependencies based on the pnpm-lock.yaml or package-lock.json
-# Using pnpm as the primary package manager as per package.json engines
-COPY package.json ./
-RUN pnpm i
+# Install dependencies in a deterministic way (lockfile-based).
+# Use package-lock.json (npm) to avoid fetching unintended versions.
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-RUN corepack enable pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -26,7 +22,7 @@ ENV PAYLOAD_IGNORE_DATABASE=true
 ENV DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
 ENV PAYLOAD_SECRET=dummy
 
-RUN pnpm run build
+RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -64,14 +60,13 @@ CMD ["node", "server.js"]
 # Migration target
 FROM base AS migration
 WORKDIR /app
-RUN corepack enable pnpm
 
 ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 COPY tsconfig.json ./tsconfig.json
-COPY next.config.mjs ./next.config.mjs
+COPY next.config.ts ./next.config.ts
 COPY src ./src
 COPY migrate-entrypoint.sh ./migrate-entrypoint.sh
 RUN chmod +x ./migrate-entrypoint.sh
