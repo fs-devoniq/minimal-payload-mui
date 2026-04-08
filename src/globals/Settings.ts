@@ -16,6 +16,7 @@ export const Settings: GlobalConfig = {
               name: 'siteName',
               type: 'text',
               required: true,
+              defaultValue: 'My Website',
             },
             {
               name: 'homePage',
@@ -27,6 +28,7 @@ export const Settings: GlobalConfig = {
               name: 'siteUrl',
               type: 'text',
               required: true,
+              defaultValue: 'http://localhost:3000',
               admin: {
                 description: 'Used for canonical and Open Graph URLs.',
               },
@@ -35,10 +37,12 @@ export const Settings: GlobalConfig = {
               name: 'defaultTitle',
               type: 'text',
               required: true,
+              defaultValue: 'My Website',
             },
             {
               name: 'titleTemplate',
               type: 'text',
+              defaultValue: '%s | My Website',
               admin: {
                 description: 'Use %s as placeholder, e.g. "%s | Devoniq".',
               },
@@ -47,6 +51,7 @@ export const Settings: GlobalConfig = {
               name: 'defaultDescription',
               type: 'textarea',
               required: true,
+              defaultValue: 'A site built with Payload CMS and Next.js.',
             },
             {
               name: 'defaultKeywords',
