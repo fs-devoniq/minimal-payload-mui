@@ -12,7 +12,7 @@ Führe diese 4 Aufgaben aus:
 
 1. **Payload CMS Block:** Analysiere die Komponente und erstelle die exakt passende Block-Konfiguration (Schema) für Payload CMS. Erstelle für alle variablen Daten (Texte, Bilder, Links) die passenden Payload-Felder.
    - **WICHTIG:** Jeder Block MUSS ein Feld `blockId` (Type: `text`) erhalten. Dieses dient als Anker-Link (z.B. für Sprungmarken in der Navigation). Gib ihm eine passende Beschreibung im Admin-Panel (z.B. "Eindeutige ID für Anker-Links, z.B. 'ueber-uns'").
-2. **Default Values:** Verwende die aktuellen statischen Inhalte aus dem React-Code als `defaultValue` in den jeweiligen Payload-Feldern, damit der Block im CMS direkt vorausgefüllt ist.
+2. **Default Values (ZWINGEND):** Du MUSST die aktuellen statischen Inhalte (Texte, Bild-URLs, Button-Labels, Links etc.) aus dem übergebenen React-Code extrahieren und als `defaultValue` in den jeweiligen Payload-Feldern eintragen. Lass diese Werte NIEMALS leer! Ziel ist es, dass der Block im CMS direkt nach der Erstellung exakt so vorausgefüllt aussieht wie der Design-Entwurf.
 3. **Backend-Registrierung (z.B. Pages.ts):** Generiere das Code-Snippet für die Collection (z.B. `Pages`). Zeige, wie das Feld (z.B. `layout` oder `content`) als `type: 'blocks'` (nicht `richText`) definiert wird und wie der neue Block dort importiert und registriert wird.
 4. **Frontend-Rendering (z.B. PageTemplate.tsx):** Generiere das Code-Snippet, das zeigt, wie die neue Block-Komponente im Frontend gerendert wird. 
    - Durchlaufe das Block-Array (z.B. `layout` oder `content`) aus den Payload-Daten.
