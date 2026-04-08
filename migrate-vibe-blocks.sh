@@ -94,12 +94,14 @@ fi
 
 echo "---------------------------------------------------"
 echo "🎉 Migration abgeschlossen!"
-echo "🧹 Führe nun das finale Linting aus..."
+echo "🧹 Führe nun den Post-Migration Validator aus (Linting, Typen, Auto-Fixing)..."
 
-npm run lint
+VALIDATOR_PROMPT="Aktiviere den Skill 'post-migration-validator'. Führe die dort definierten Schritte (Prettier, ESLint mit --fix, tsc --noEmit) aus und behebe eventuell verbleibende Code- oder Typfehler, die während der Migration entstanden sind."
+
+gemini -y -p "$VALIDATOR_PROMPT"
 
 if [ $? -ne 0 ]; then
-  echo "⚠️ Das Linting hat noch Fehler oder Warnungen gefunden. Bitte manuell prüfen."
+  echo "⚠️ Der Validator konnte nicht alle Fehler automatisch beheben. Bitte manuell prüfen."
 else
-  echo "✅ Alles fehlerfrei! Migration komplett abgeschlossen."
+  echo "✅ Alles fehlerfrei! Migration und Validierung komplett abgeschlossen."
 fi
