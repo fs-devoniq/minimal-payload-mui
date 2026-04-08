@@ -23,7 +23,7 @@ Führe diese 4 Aufgaben aus:
    - Durchlaufe das Block-Array (z.B. `layout` oder `content`) aus den Payload-Daten.
    - Prüfe den `blockType` und rendere die entsprechende React-Komponente.
    - Übergib die Payload-Daten direkt als Props an die Komponente.
-   - **WICHTIG:** Übergib das Feld `blockId` als `id`-Prop an die Komponente.
+   - **WICHTIG:** Übergib das Feld `blockId` als `id`-Prop an die Komponente, sodass es die angegebene ID in Payload rendert.
    - **Wichtig:** Achte darauf, dass Full-Screen-Elemente (wie Hero-Sektionen) nicht durch umschließende Container im Template eingeschränkt werden, damit sie die volle Breite/Höhe einnehmen können.
 
 Implementiere den Code direkt im Projekt und halte dich mit Erklärungen kurz. Sobald du alle Dateien fertiggestellt hast, generiere die passenden Terminal-Befehle, um die Änderungen zu committen (`git add .` und `git commit -m "..."`). 
