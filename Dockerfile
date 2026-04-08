@@ -16,6 +16,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Some Next setups don't include a `public/` directory.
+# Create it so `COPY --from=builder /app/public ...` never fails.
+RUN mkdir -p public
 
 # Dummy environment variables for the build
 ENV PAYLOAD_IGNORE_DATABASE=true
