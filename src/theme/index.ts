@@ -1,6 +1,6 @@
 'use client'
 import { createTheme, ThemeOptions } from '@mui/material/styles'
-import { baseTheme } from './base'
+import { baseTheme, baseThemeOptions } from './base'
 import { cssBaselineOverrides } from './overrides/cssBaseline'
 import { svgIconOverrides } from './overrides/svgIcon'
 import { inputOverrides } from './overrides/input'
@@ -24,38 +24,36 @@ export interface ThemeColors {
 }
 
 export const createAppTheme = (colors?: ThemeColors | null) => {
-  const dynamicPalette = {
-    ...baseTheme.palette,
-    primary: {
-      ...baseTheme.palette.primary,
-      ...(colors?.primary ? { main: colors.primary } : {}),
-    },
-    secondary: {
-      ...baseTheme.palette.secondary,
-      ...(colors?.secondary ? { main: colors.secondary } : {}),
-    },
-    background: {
-      ...baseTheme.palette.background,
-      ...(colors?.backgroundDefault ? { default: colors.backgroundDefault } : {}),
-      ...(colors?.backgroundPaper ? { paper: colors.backgroundPaper } : {}),
-    },
-    text: {
-      ...baseTheme.palette.text,
-      ...(colors?.textPrimary ? { primary: colors.textPrimary } : {}),
-      ...(colors?.textSecondary ? { secondary: colors.textSecondary } : {}),
-    },
-    success: {
-      ...baseTheme.palette.success,
-      ...(colors?.success ? { main: colors.success } : {}),
-    },
-    error: {
-      ...baseTheme.palette.error,
-      ...(colors?.error ? { main: colors.error } : {}),
-    },
+  const basePalette = baseThemeOptions.palette || {}
+
+  const dynamicPalette: ThemeOptions['palette'] = {
+    ...basePalette,
+    ...(colors?.primary ? { primary: { ...(basePalette as any).primary, main: colors.primary } } : {}),
+    ...(colors?.secondary ? { secondary: { ...(basePalette as any).secondary, main: colors.secondary } } : {}),
+    ...(colors?.backgroundDefault || colors?.backgroundPaper
+      ? {
+          background: {
+            ...(basePalette as any).background,
+            ...(colors?.backgroundDefault ? { default: colors.backgroundDefault } : {}),
+            ...(colors?.backgroundPaper ? { paper: colors.backgroundPaper } : {}),
+          },
+        }
+      : {}),
+    ...(colors?.textPrimary || colors?.textSecondary
+      ? {
+          text: {
+            ...(basePalette as any).text,
+            ...(colors?.textPrimary ? { primary: colors.textPrimary } : {}),
+            ...(colors?.textSecondary ? { secondary: colors.textSecondary } : {}),
+          },
+        }
+      : {}),
+    ...(colors?.success ? { success: { ...(basePalette as any).success, main: colors.success } } : {}),
+    ...(colors?.error ? { error: { ...(basePalette as any).error, main: colors.error } } : {}),
   }
 
   return createTheme({
-    ...baseTheme,
+    ...baseThemeOptions,
     palette: dynamicPalette,
     shape: {
       borderRadius: 4,

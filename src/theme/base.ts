@@ -1,7 +1,7 @@
 'use client'
-import { createTheme } from '@mui/material/styles'
+import { createTheme, ThemeOptions } from '@mui/material/styles'
 
-export const baseTheme = createTheme({
+export const baseThemeOptions: ThemeOptions = {
   palette: {
     mode: 'dark',
     primary: {
@@ -38,4 +38,6 @@ export const baseTheme = createTheme({
     fontSize: 14,
     fontFamily: ['var(--font-red-hat-display)', 'sans-serif'].join(','),
   },
-})
+}
+
+export const baseTheme = createTheme(baseThemeOptions)
