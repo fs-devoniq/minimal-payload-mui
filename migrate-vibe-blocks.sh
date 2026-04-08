@@ -1,53 +1,130 @@
 #!/bin/bash
 
-# 1. UMGEBUNG LADEN
-# Lade Umgebungsvariablen aus einer .env Datei, falls vorhanden
+# --- EINSTELLUNGEN ---
+SHOW_THOUGHTS=false
+VIBE_DIR=""
+
+# --- ARGUMENT-PARSING ---
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -v|--verbose) SHOW_THOUGHTS=true ;;
+        *) VIBE_DIR=$1 ;;
+    esac
+    shift
+done
+
+# --- HILFSFUNKTIONEN FÜR DIE UI ---
+# Farben
+C_RESET="\033[0m"
+C_GREEN="\033[32m"
+C_BLUE="\033[34m"
+C_CYAN="\033[36m"
+C_YELLOW="\033[33m"
+C_RED="\033[31m"
+C_GRAY="\033[90m"
+
+# Fortschrittsbalken zeichnen
+function draw_progress() {
+    local label=$1
+    local current=$2
+    local total=$3
+    local width=30
+    local percent=$((current * 100 / total))
+    local filled=$((current * width / total))
+    local empty=$((width - filled))
+    
+    local bar=$(printf "%${filled}s" | tr ' ' '█')
+    local space=$(printf "%${empty}s" | tr ' ' '░')
+    
+    echo -e "${C_CYAN}${label}${C_RESET} ${C_GREEN}[${bar}${C_GRAY}${space}${C_GREEN}]${C_RESET} ${percent}% (${current}/${total})"
+}
+
+# Gemini ausführen mit schickem Output oder Log
+function run_gemini() {
+    local prompt=$1
+    local log_file=".gemini-migration.log"
+    
+    if [ "$SHOW_THOUGHTS" = true ]; then
+        echo -e "${C_GRAY}╭─── Gemini AI denkt...${C_RESET}"
+        # Fange stdout/stderr und formatiere jede Zeile mit einem Seitenstreifen
+        gemini -y -p "$prompt" 2>&1 | while IFS= read -r line; do
+            echo -e "${C_GRAY}│${C_CYAN}  $line${C_RESET}"
+        done
+        # Check den Exit-Status von PIPESTATUS[0] wegen der Pipe
+        local exit_code=${PIPESTATUS[0]}
+        echo -e "${C_GRAY}╰──────────────────────${C_RESET}"
+        return $exit_code
+    else
+        # Silent Mode: Lade-Spinner Simulation & Loggen
+        gemini -y -p "$prompt" >> "$log_file" 2>&1
+        return $?
+    fi
+}
+
+# --- 1. UMGEBUNG LADEN ---
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-# 2. VALIDIERUNG
-# Prüfen, ob ein Pfad zum Vibe-Projekt übergeben wurde
-VIBE_DIR=$1
-
+# --- 2. VALIDIERUNG ---
 if [ -z "$VIBE_DIR" ]; then
-  echo "❌ Bitte gib den Pfad zu deinem Vibe-Projekt an."
-  echo "💡 Nutzung: ./migrate-vibe-blocks.sh /Users/name/git/vibe-projekt"
+  echo -e "${C_RED}❌ Bitte gib den Pfad zu deinem Vibe-Projekt an.${C_RESET}"
+  echo -e "${C_YELLOW}💡 Nutzung: ./migrate-vibe-blocks.sh [-v|--verbose] /Users/name/git/vibe-projekt${C_RESET}"
   exit 1
 fi
 
 BLOCKS_PATH="$VIBE_DIR/src/blocks"
 
-# Prüfen, ob der blocks Ordner existiert
 if [ ! -d "$BLOCKS_PATH" ]; then
-  echo "❌ Fehler: Ordner $BLOCKS_PATH nicht gefunden."
+  echo -e "${C_RED}❌ Fehler: Ordner $BLOCKS_PATH nicht gefunden.${C_RESET}"
   exit 1
 fi
 
-# Prüfen, ob der API Key existiert
 if [ -z "$GEMINI_API_KEY" ]; then
-  echo "❌ Fehler: GEMINI_API_KEY ist nicht gesetzt."
-  echo "💡 Bitte setze ihn vorher mit: export GEMINI_API_KEY=\"dein-key\""
-  echo "Oder erstelle eine .env Datei im aktuellen Projekt-Ordner."
+  echo -e "${C_RED}❌ Fehler: GEMINI_API_KEY ist nicht gesetzt.${C_RESET}"
   exit 1
 fi
 
-echo "🔍 Vibe-Projekt gefunden: $VIBE_DIR"
-echo "🚀 Starte optimierte Migration der Komponenten..."
-echo "---------------------------------------------------"
+# Log-Datei leeren
+> .gemini-migration.log
 
-# 3. LOOP FÜR ALLE EINZELNEN BLÖCKE
-for BLOCK_DIR in "$BLOCKS_PATH"/*; do
-  if [ -d "$BLOCK_DIR" ]; then
+# Zähle alle Blöcke
+BLOCK_DIRS=($(find "$BLOCKS_PATH" -mindepth 1 -maxdepth 1 -type d))
+TOTAL_BLOCKS=${#BLOCK_DIRS[@]}
+
+if [ "$TOTAL_BLOCKS" -eq 0 ]; then
+  echo -e "${C_YELLOW}⚠️ Keine Blöcke in $BLOCKS_PATH gefunden.${C_RESET}"
+  exit 0
+fi
+
+# Gesamtschritte = Blöcke + Globals + Validator
+TOTAL_STEPS=$((TOTAL_BLOCKS + 2))
+CURRENT_STEP=0
+CURRENT_BLOCK=0
+
+echo -e "\n${C_BLUE}=======================================================${C_RESET}"
+echo -e "${C_BLUE}🚀 STARTE OPTIMIERTE PAYLOAD & MUI MIGRATION${C_RESET}"
+echo -e "${C_BLUE}=======================================================${C_RESET}\n"
+echo -e "🔍 Projekt: ${C_YELLOW}$VIBE_DIR${C_RESET}"
+if [ "$SHOW_THOUGHTS" = false ]; then
+    echo -e "🤫 Silent Mode aktiv (Details in .gemini-migration.log. Nutze -v für Gemini-Gedanken)\n"
+fi
+
+# --- 3. LOOP FÜR ALLE EINZELNEN BLÖCKE ---
+for BLOCK_DIR in "${BLOCK_DIRS[@]}"; do
     BLOCK_NAME=$(basename "$BLOCK_DIR")
     FILE_PATH="$BLOCK_DIR/index.tsx"
 
+    CURRENT_STEP=$((CURRENT_STEP + 1))
+    CURRENT_BLOCK=$((CURRENT_BLOCK + 1))
+
+    echo ""
+    draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+    draw_progress "Komponenten:  " $CURRENT_BLOCK $TOTAL_BLOCKS
+    echo -e "📦 Verarbeite Block: ${C_YELLOW}$BLOCK_NAME${C_RESET}"
+
     if [ -f "$FILE_PATH" ]; then
-      echo "📦 Verarbeite Block: $BLOCK_NAME"
-      echo "📄 Pfad: $FILE_PATH"
       
-      # Optimierter Prompt für maximale Geschwindigkeit
-      # Nutzt nacheinander die zwei Skills für Design und CMS-Struktur
       PROMPT="Migriere die Komponente '$BLOCK_NAME' aus der Datei $FILE_PATH.
       Schritt 1: Aktiviere den Skill 'nextjs-mui-converter' und wandle den Code der Datei in eine saubere MUI-Komponente für Next.js um. Speichere diese in src/components/$BLOCK_NAME/index.tsx.
       Schritt 2: Aktiviere danach den Skill 'payload-block-generator' für die gerade erstellte Komponente. Erstelle die Block-Konfiguration in src/blocks/$BLOCK_NAME/config.ts, registriere den Block in src/collections/Pages.ts und integriere das Rendering in src/components/PageTemplate.tsx.
@@ -56,25 +133,23 @@ for BLOCK_DIR in "$BLOCKS_PATH"/*; do
       Führe ABSOLUT KEIN LINTING (eslint) und KEINE TYPE-CHECKS (tsc) aus. 
       Überspringe die Validierung komplett, um Zeit zu sparen. Erstelle nur die Dateien."
 
-      # -y für automatische Bestätigung (YOLO)
-      # -p für automatische Abarbeitung im Hintergrund (Headless)
-      gemini -y -p "$PROMPT"
+      run_gemini "$PROMPT"
       
       if [ $? -ne 0 ]; then
-        echo "❌ Fehler bei der Migration von $BLOCK_NAME! Breche Skript ab."
+        echo -e "${C_RED}❌ Fehler bei der Migration von $BLOCK_NAME! Breche Skript ab.${C_RESET}"
         exit 1
       fi
-      
-      echo "✅ $BLOCK_NAME erfolgreich migriert."
-      echo "---------------------------------------------------"
+      echo -e "${C_GREEN}✅ $BLOCK_NAME erfolgreich migriert.${C_RESET}"
     else
-      echo "⚠️ Keine index.tsx in $BLOCK_NAME gefunden. Überspringe..."
+      echo -e "${C_YELLOW}⚠️ Keine index.tsx in $BLOCK_NAME gefunden. Überspringe...${C_RESET}"
     fi
-  fi
 done
 
-# 4. ABSCHLUSS: GLOBALE ELEMENTE (NAVBAR & FOOTER)
-echo "🌐 Suche nach globalen Elementen (Navbar/Footer) im Vibe-Projekt..."
+# --- 4. GLOBALE ELEMENTE (NAVBAR & FOOTER) ---
+CURRENT_STEP=$((CURRENT_STEP + 1))
+echo ""
+draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+echo -e "🌐 Verarbeite Globale Elemente (Header/Footer)..."
 
 GLOBAL_PROMPT="Aktiviere den Skill 'payload-globals-generator'. 
 Suche im Vibe-Projekt unter $VIBE_DIR (schau in src/components oder src/App.tsx) nach Header/Navbar und Footer Komponenten.
@@ -84,24 +159,30 @@ Integriere diese in das globale Frontend-Layout (src/app/(frontend)/layout.tsx),
 
 WICHTIG: Führe ABSOLUT KEIN LINTING (eslint) und KEINE TYPE-CHECKS (tsc) aus."
 
-gemini -y -p "$GLOBAL_PROMPT"
+run_gemini "$GLOBAL_PROMPT"
 
 if [ $? -ne 0 ]; then
-  echo "⚠️ Fehler bei der Erstellung der globalen Elemente."
+  echo -e "${C_YELLOW}⚠️ Fehler bei der Erstellung der globalen Elemente.${C_RESET}"
 else
-  echo "✅ Globale Elemente (Header/Footer) erfolgreich integriert."
+  echo -e "${C_GREEN}✅ Globale Elemente erfolgreich integriert.${C_RESET}"
 fi
 
-echo "---------------------------------------------------"
-echo "🎉 Migration abgeschlossen!"
-echo "🧹 Führe nun den Post-Migration Validator aus (Linting, Typen, Auto-Fixing)..."
+# --- 5. VALIDATOR ---
+CURRENT_STEP=$((CURRENT_STEP + 1))
+echo ""
+draw_progress "Gesamtforsatz:" $CURRENT_STEP $TOTAL_STEPS
+echo -e "🧹 Führe den Post-Migration Validator aus (Linting, Typen, Auto-Fixing)..."
 
 VALIDATOR_PROMPT="Aktiviere den Skill 'post-migration-validator'. Führe die dort definierten Schritte (Prettier, ESLint mit --fix, tsc --noEmit) aus und behebe eventuell verbleibende Code- oder Typfehler, die während der Migration entstanden sind."
 
-gemini -y -p "$VALIDATOR_PROMPT"
+run_gemini "$VALIDATOR_PROMPT"
 
 if [ $? -ne 0 ]; then
-  echo "⚠️ Der Validator konnte nicht alle Fehler automatisch beheben. Bitte manuell prüfen."
+  echo -e "${C_YELLOW}⚠️ Der Validator konnte nicht alle Fehler automatisch beheben. Bitte manuell prüfen.${C_RESET}"
 else
-  echo "✅ Alles fehlerfrei! Migration und Validierung komplett abgeschlossen."
+  echo -e "${C_GREEN}✅ Alles fehlerfrei! Validierung abgeschlossen.${C_RESET}"
 fi
+
+echo -e "\n${C_GREEN}=======================================================${C_RESET}"
+echo -e "${C_GREEN}🎉 MIGRATION KOMPLETT ABGESCHLOSSEN!${C_RESET}"
+echo -e "${C_GREEN}=======================================================${C_RESET}\n"
