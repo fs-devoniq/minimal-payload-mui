@@ -97,8 +97,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   try {
     const payload = await getPayload({ config })
     const settings = await payload.findGlobal({ slug: 'settings' })
-    if (settings?.schemaJsonLd) {
-      schemaJsonLd = settings.schemaJsonLd
+    const rawSchemaJsonLd = settings?.schemaJsonLd
+    if (typeof rawSchemaJsonLd === 'string') {
+      schemaJsonLd = rawSchemaJsonLd
+    } else if (rawSchemaJsonLd) {
+      schemaJsonLd = JSON.stringify(rawSchemaJsonLd)
     }
   } catch (error) {
     // ignore
@@ -106,15 +109,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="en">
-      <head>
-        {schemaJsonLd && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: schemaJsonLd }}
-          />
-        )}
-      </head>
       <body>
+        {schemaJsonLd ? (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaJsonLd }} />
+        ) : null}
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
