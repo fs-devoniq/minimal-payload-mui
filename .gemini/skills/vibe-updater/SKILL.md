@@ -24,6 +24,7 @@ Führe diese Schritte für jede geänderte Komponente aus:
 - Wenn die neue Vibe-Version neue Texte, Bilder oder Buttons enthält, füge die entsprechenden Felder in `src/blocks/[BlockName]/config.ts` hinzu.
 - Behalte bestehende Felder und deren Namen bei, um die Datenbank-Integrität im CMS nicht zu gefährden.
 - Setze die neuen statischen Inhalte als `defaultValue` für neue Felder.
+- **WICHTIG:** Bei `select`-Feldern MUSS der `defaultValue` exakt dem Datentyp der `options` entsprechen (meist Strings), um Postgres-Enum-Fehler beim `db push` zu vermeiden.
 
 ### 4. Theme & Settings Check
 - Falls die Änderung neue globale Farben oder Schriften einführt, wende die Regeln des `theme-migrator` an, um `base.ts` und `Settings.ts` zu erweitern.
