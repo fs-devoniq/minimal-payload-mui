@@ -24,12 +24,15 @@ IONOS_RESPONSE=$(curl -s -X POST "https://api.hosting.ionos.com/dns/v1/zones/$IO
        \"disabled\": false
      }]")
 
-if echo "$IONOS_RESPONSE" | grep -q "id"; then
+# IONOS Erfolg ist ein Array, startet also mit [
+if [[ "$IONOS_RESPONSE" == \[* ]]; then
   echo "✅ DNS Record erfolgreich angelegt."
 elif echo "$IONOS_RESPONSE" | grep -q "ALREADY_EXISTS"; then
   echo "ℹ️ DNS Record existiert bereits bei IONOS. Alles okay."
 else
-  echo "⚠️ IONOS API Antwort: $IONOS_RESPONSE"
+  echo "❌ IONOS FEHLER: $IONOS_RESPONSE"
+  # Wir brechen hier NICHT ab, damit NPM es trotzdem versuchen kann, 
+  # falls der Eintrag manuell angelegt wurde.
 fi
 
 # 3. NPM Login & Token holen
@@ -79,14 +82,12 @@ else
   echo "✅ Proxy Host erstellt (ID: $HOST_ID)."
 fi
 
-# 5. SSL (Let's Encrypt) einrichten, falls noch nicht vorhanden
+# 5. SSL (Let's Encrypt) einrichten
 if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
   echo "🔐 Fordere SSL Zertifikat (Let's Encrypt) an..."
-  echo "⏳ Warte 10 Sekunden, damit DNS greifen kann..."
-  sleep 10
+  echo "⏳ Warte 15 Sekunden auf DNS Propagation..."
+  sleep 15
 
-  # Wir nutzen die PUT Methode auf dem Proxy Host, um SSL zu aktivieren
-  # NPM wird versuchen, das Zertifikat automatisch zu generieren
   SSL_RESPONSE=$(curl -s -X PUT "${NPM_HOST}/api/nginx/proxy-hosts/$HOST_ID" \
     -H "Authorization: Bearer $NPM_TOKEN" \
     -H "Content-Type: application/json" \
@@ -98,7 +99,8 @@ if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
       \"certificate_id\": \"new\",
       \"ssl_forced\": true,
       \"http2_support\": true,
-      \"hsts_enabled\": true,
+      \"hsts_enabled\": false,
+      \"hsts_subdomains\": false,
       \"meta\": {
         \"letsencrypt_email\": \"$NPM_USER\",
         \"letsencrypt_agree\": true
@@ -106,11 +108,10 @@ if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
     }")
 
   if echo "$SSL_RESPONSE" | grep -q "certificate_id"; then
-    NEW_CERT_ID=$(echo "$SSL_RESPONSE" | jq -r .certificate_id)
-    echo "✅ SSL erfolgreich aktiviert (Zertifikat ID: $NEW_CERT_ID)."
+    echo "✅ SSL erfolgreich aktiviert."
   else
-    echo "⚠️ SSL Aktivierung fehlgeschlagen. NPM Antwort: $SSL_RESPONSE"
-    echo "ℹ️ Möglicherweise ist DNS noch nicht propagiert. Du kannst SSL später manuell im NPM Dashboard aktivieren."
+    echo "❌ SSL FEHLER: $SSL_RESPONSE"
+    echo "ℹ️ Hinweis: SSL schlägt fehl, wenn die Domain noch nicht im Internet aufgelöst werden kann."
   fi
 else
   echo "✅ SSL ist bereits aktiv."
@@ -119,4 +120,5 @@ fi
 echo "✅ Setup abgeschlossen."
 echo "DEPLOY_URL=$FULL_DOMAIN" >> $GITHUB_OUTPUT
 echo "SUBDOMAIN=$SUBDOMAIN" >> $GITHUB_OUTPUT
+
 
