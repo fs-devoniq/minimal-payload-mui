@@ -8,6 +8,11 @@ import { ThemeClientProvider } from '@/components/ThemeClientProvider'
 import { ThemeColors } from '@/theme'
 
 export async function generateViewport(): Promise<Viewport> {
+  if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
+    return {
+      themeColor: '#000000',
+    }
+  }
   try {
     const payload = await getPayload({ config })
     const settings = await payload.findGlobal({ slug: 'settings' })
@@ -22,6 +27,12 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
+    return {
+      title: 'Payload Template',
+      description: 'A minimal Payload Next.js template.',
+    }
+  }
   try {
     const payload = await getPayload({ config })
     const settings = await payload.findGlobal({ slug: 'settings' })
@@ -103,6 +114,20 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   let schemaJsonLd = ''
   let themeColors: ThemeColors | null = null
+
+  if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
+    return (
+      <html lang="en">
+        <body>
+          <AppRouterCacheProvider>
+            <ThemeClientProvider colors={null}>
+              <main>{children}</main>
+            </ThemeClientProvider>
+          </AppRouterCacheProvider>
+        </body>
+      </html>
+    )
+  }
 
   try {
     const payload = await getPayload({ config })

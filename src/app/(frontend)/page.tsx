@@ -6,6 +6,19 @@ import { Page } from '@/payload-types'
 import { Typography, Container, Box, Button, Link } from '@mui/material'
 
 export default async function HomePage() {
+  if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
+    return (
+      <Container sx={{ py: 8, textAlign: 'center' }}>
+        <Typography variant="h2" gutterBottom>
+          Welcome to Payload MUI
+        </Typography>
+        <Typography variant="body1">
+          Database is ignored during build.
+        </Typography>
+      </Container>
+    )
+  }
+
   const payload = await getPayload({ config })
   
   const settings = await payload.findGlobal({

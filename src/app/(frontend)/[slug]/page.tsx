@@ -34,6 +34,10 @@ export default async function Page({ params }: PageProps) {
 }
 
 export async function generateStaticParams() {
+  if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
+    return []
+  }
+
   const payload = await getPayload({ config })
   const pages = await payload.find({
     collection: 'pages',
