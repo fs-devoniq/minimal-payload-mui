@@ -130,8 +130,9 @@ jobs:
           DYNAMIC_DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${STACK_NAME}_db:5432/${DB_NAME}"
           
           # App Environment Secret zusammenbauen
-          APP_ENV="PAYLOAD_SECRET=${ENV_PAYLOAD_SECRET}
-          DATABASE_URL=${DYNAMIC_DATABASE_URL}"
+          # Werte in einfache Anführungszeichen setzen, damit Bash sie in entrypoint.sh nicht als Befehle interpretiert (z.B. bei Sonderzeichen im Passwort)
+          APP_ENV="PAYLOAD_SECRET='${ENV_PAYLOAD_SECRET}'
+          DATABASE_URL='${DYNAMIC_DATABASE_URL}'"
           
           # Secrets anlegen
           create_or_update_secret "${STACK_NAME}_env" "$APP_ENV"
