@@ -6,22 +6,24 @@ Diese Anleitung beschreibt den kompletten Ablauf, um ein in AI Studio ("Vibe") g
 
 Bevor du den Workflow startest, müssen folgende Werkzeuge auf deinem System installiert sein:
 
-<!-- tabset -->
-<!-- tab:🍎 macOS -->
+## System-Installationen {.tabset}
+
+### 🍎 macOS
 - **Homebrew** (Paketmanager) sollte installiert sein.
 - **Git, Node.js & Yarn:** `brew install git node yarn`
 - **Docker:** [Docker Desktop für Mac](https://www.docker.com/products/docker-desktop/) herunterladen und installieren.
-<!-- tab:🐧 Linux (Debian/Ubuntu) -->
+
+### 🐧 Linux (Debian/Ubuntu)
 - **Git & Node.js:** `sudo apt update && sudo apt install git nodejs npm`
 - **Yarn:** `sudo npm install -g yarn`
 - **Docker:** [Docker Engine installieren](https://docs.docker.com/engine/install/ubuntu/) und den Dienst starten.
-<!-- tab:🪟 Windows -->
+
+### 🪟 Windows
 *Tipp: Wir empfehlen die Nutzung des Terminals über **WSL2** (Windows Subsystem for Linux) oder die **Git Bash**.*
 - **Git:** [Git for Windows](https://git-scm.com/download/win) herunterladen und installieren.
 - **Node.js:** [Node.js Installer](https://nodejs.org/) herunterladen und ausführen.
 - **Yarn:** Öffne dein Terminal und führe `npm install -g yarn` aus.
 - **Docker:** [Docker Desktop für Windows](https://www.docker.com/products/docker-desktop/) (inkl. WSL2-Backend) installieren.
-<!-- /tabset -->
 
 ### 🛠️ Globale Tools & Basis-Setup (Alle Systeme)
 1. **Gemini CLI installieren:** Das KI-Tool, das die Migration ausführt:
