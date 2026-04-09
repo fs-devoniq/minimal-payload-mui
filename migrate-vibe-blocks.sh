@@ -184,6 +184,18 @@ else
   echo -e "${C_GREEN}✅ Globale Elemente erfolgreich integriert.${C_RESET}"
 fi
 
+# --- 4.5 TYPES GENERIEREN (WICHTIG FÜR VALIDATOR & BUILD) ---
+echo ""
+echo -e "⚙️ Generiere Payload-Typen..."
+# Dummy-Werte für Payload-Start nutzen
+PAYLOAD_SECRET=dummy_secret_for_types DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy yarn generate:types
+
+if [ $? -ne 0 ]; then
+  echo -e "${C_YELLOW}⚠️ Warnung: Typ-Generierung fehlgeschlagen. Der Validator könnte Fehler melden.${C_RESET}"
+else
+  echo -e "${C_GREEN}✅ Payload-Typen erfolgreich aktualisiert.${C_RESET}"
+fi
+
 # --- 5. VALIDATOR ---
 CURRENT_STEP=$((CURRENT_STEP + 1))
 echo ""

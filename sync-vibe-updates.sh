@@ -58,6 +58,9 @@ for FILE in $CHANGED_FILES; do
     fi
 done
 
+echo -e "\n${C_CYAN}⚙️ Aktualisiere Payload-Typen...${C_RESET}"
+PAYLOAD_SECRET=dummy_secret_for_types DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy yarn generate:types
+
 echo -e "\n${C_CYAN}🗄️ Erstelle Payload Datenbank-Migration für die Updates...${C_RESET}"
 # Setze Dummy-Werte für CI/CD Umgebungen
 PAYLOAD_SECRET="${PAYLOAD_SECRET:-dummy_secret_for_ci_to_bypass_validation}" \
