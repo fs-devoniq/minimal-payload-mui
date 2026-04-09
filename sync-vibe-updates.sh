@@ -58,4 +58,12 @@ for FILE in $CHANGED_FILES; do
     fi
 done
 
+echo -e "\n${C_CYAN}🗄️ Erstelle Payload Datenbank-Migration für die Updates...${C_RESET}"
+yarn payload migrate:create vibe_sync_update
+if [ $? -ne 0 ]; then
+  echo -e "${C_YELLOW}⚠️ Migration konnte nicht automatisch erstellt werden. Bitte manuell ausführen.${C_RESET}"
+else
+  echo -e "${C_GREEN}✅ Datenbank-Migration erfolgreich erstellt.${C_RESET}"
+fi
+
 echo -e "\n${C_GREEN}✨ Sync abgeschlossen!${C_RESET}"

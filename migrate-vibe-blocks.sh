@@ -200,6 +200,22 @@ else
   echo -e "${C_GREEN}✅ Alles fehlerfrei! Validierung abgeschlossen.${C_RESET}"
 fi
 
+# --- 6. DATENBANK MIGRATION ERSTELLEN ---
+CURRENT_STEP=$((CURRENT_STEP + 1))
+echo ""
+draw_progress "Gesamtfortschritt:" $CURRENT_STEP $TOTAL_STEPS
+echo -e "🗄️ Erstelle Payload Datenbank-Migration..."
+
+# Da wir yarn nutzen, rufen wir yarn payload migrate:create auf
+MIGRATION_NAME="vibe_migration"
+yarn payload migrate:create $MIGRATION_NAME
+
+if [ $? -ne 0 ]; then
+  echo -e "${C_YELLOW}⚠️ Migration konnte nicht erstellt werden. Bitte manuell prüfen (yarn payload migrate:create).${C_RESET}"
+else
+  echo -e "${C_GREEN}✅ Datenbank-Migration erfolgreich erstellt.${C_RESET}"
+fi
+
 echo -e "\n${C_GREEN}=======================================================${C_RESET}"
 echo -e "${C_GREEN}🎉 MIGRATION KOMPLETT ABGESCHLOSSEN!${C_RESET}"
 
