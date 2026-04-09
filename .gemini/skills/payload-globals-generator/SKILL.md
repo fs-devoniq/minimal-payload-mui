@@ -24,7 +24,8 @@ Führe exakt diese 4 Schritte aus:
    - **WICHTIG (Logik-Migration):** Suche in der Quell-Datei nach funktionaler Logik, die mit dieser Komponente zusammenhängt (Scroll-Logik, UI-State für Mobile-Menüs, interaktive Hooks) und integriere diese in die neue MUI-Komponente. Nutze moderne Hooks (`useState`, `useEffect`, MUI's `useScrollTrigger`).
 
 3. **Payload Config Update (`src/payload.config.ts`):**
-   - Generiere das Snippet, das zeigt, wie das neue Global (Header/Footer) in die Hauptkonfiguration von Payload (im `globals`-Array) importiert und registriert wird.
+   - **Öffne zwingend die Datei `src/payload.config.ts`** und füge den Import für das neue Global (Header/Footer) hinzu. 
+   - Füge das neue Global zwingend in das `globals`-Array in dieser Datei ein. Du darfst nicht nur ein Snippet zeigen, du musst die Datei bearbeiten!
 
 4. **Next.js Layout Integration (`src/app/(frontend)/layout.tsx`):**
    - Generiere das Code-Snippet für das Root-Layout (oder das relevante Frontend-Layout).

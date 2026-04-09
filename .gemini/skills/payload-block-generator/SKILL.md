@@ -19,8 +19,8 @@ Führe diese 4 Aufgaben aus:
 
 2. **Default Values (ZWINGEND & LÜCKENLOS):** Du MUSST ABSOLUT ALLE aktuellen statischen Inhalte (alle Texte, Bild-URLs, Button-Labels, Links etc.) aus dem übergebenen React-Code extrahieren und als `defaultValue` in den jeweiligen Payload-Feldern eintragen. Lass diese Werte NIEMALS leer! Ziel ist es, dass der Block im CMS direkt nach der Erstellung zu 100% identisch zum Design-Entwurf vorausgefüllt ist. Jedes CMS-Feld, das du anlegst, braucht einen sinnvollen Default-Wert aus der Vorlage.
    - **WICHTIGER TYP-HINWEIS:** Bei `select`-Feldern MUSS der `defaultValue` exakt dem Datentyp der `options` entsprechen. Da Payload `select`-Felder in Postgres als `enum` anlegt, führt ein Typkonflikt (z.B. Zahl `4` statt String `'4'`) zu einem Datenbank-Absturz beim `db push`. Nutze im Zweifel immer Strings für Select-Optionen und Defaults.
-3. **Backend-Registrierung (z.B. Pages.ts):** Generiere das Code-Snippet für die Collection (z.B. `Pages`). Zeige, wie das Feld (z.B. `layout` oder `content`) als `type: 'blocks'` (nicht `richText`) definiert wird und wie der neue Block dort importiert und registriert wird.
-4. **Frontend-Rendering (z.B. PageTemplate.tsx):** Generiere das Code-Snippet, das zeigt, wie die neue Block-Komponente im Frontend gerendert wird. 
+3. **Backend-Registrierung (z.B. Pages.ts):** **Öffne zwingend die entsprechende Collection-Datei (z.B. `src/collections/Pages.ts`)** und bearbeite sie: Importiere deinen neuen Block und füge ihn dem Block-Array (z.B. im Feld `layout` oder `content`) hinzu.
+4. **Frontend-Rendering (z.B. PageTemplate.tsx):** **Öffne zwingend die Template-Datei (z.B. `src/components/PageTemplate.tsx`)** und bearbeite sie: Importiere deine React-Komponente und binde sie in den Switch-Case (oder das entsprechende Rendering-Mapping) für die Blöcke ein. 
    - Durchlaufe das Block-Array (z.B. `layout` oder `content`) aus den Payload-Daten.
    - Prüfe den `blockType` und rendere die entsprechende React-Komponente.
    - Übergib die Payload-Daten direkt als Props an die Komponente.
