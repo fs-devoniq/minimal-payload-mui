@@ -4,21 +4,25 @@ set -e
 # Erwartete Umgebungsvariablen:
 # IONOS_API_KEY, IONOS_ZONE_ID, NPM_HOST, NPM_USER, NPM_PASS, DEPLOY_HOST, STACK_NAME
 
-# 1. Subdomain aus dem Stack-Namen (Repository-Namen) ableiten
+# 1. Bereinige DEPLOY_HOST (entferne http://, https:// und trailing slashes)
+# Ein A-Record benötigt eine REINE IP-Adresse!
+CLEAN_IP=$(echo "$DEPLOY_HOST" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+
+# 2. Subdomain aus dem Stack-Namen (Repository-Namen) ableiten
 SUBDOMAIN=$(echo "$STACK_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g')
 FULL_DOMAIN="${SUBDOMAIN}.devoniq.de"
 
-echo "🚀 Starte Setup für $FULL_DOMAIN"
+echo "🚀 Starte Setup für $FULL_DOMAIN (Ziel-IP: $CLEAN_IP)"
 
-# 2. IONOS DNS Eintrag erstellen
-echo "📡 Erstelle IONOS DNS Record für $SUBDOMAIN pointing to $DEPLOY_HOST..."
+# 3. IONOS DNS Eintrag erstellen
+echo "📡 Erstelle IONOS DNS Record für $SUBDOMAIN pointing to $CLEAN_IP..."
 IONOS_RESPONSE=$(curl -s -X POST "https://api.hosting.ionos.com/dns/v1/zones/$IONOS_ZONE_ID/records" \
      -H "X-API-Key: $IONOS_API_KEY" \
      -H "Content-Type: application/json" \
      -d "[{
        \"name\": \"$SUBDOMAIN\",
        \"type\": \"A\",
-       \"content\": \"$DEPLOY_HOST\",
+       \"content\": \"$CLEAN_IP\",
        \"ttl\": 3600,
        \"prio\": 0,
        \"disabled\": false
@@ -34,13 +38,13 @@ else
   echo "❌ IONOS FEHLER: $IONOS_RESPONSE"
 fi
 
-# 3. NPM Login
+# 4. NPM Login
 echo "🔑 Logge bei Nginx Proxy Manager ein..."
 NPM_TOKEN=$(curl -s -X POST "${NPM_HOST}/api/tokens" \
   -H "Content-Type: application/json" \
   -d "{\"identity\": \"$NPM_USER\", \"secret\": \"$NPM_PASS\"}" | jq -r .token)
 
-# 4. NPM Proxy Host prüfen oder erstellen
+# 5. NPM Proxy Host prüfen oder erstellen
 EXISTING_HOST=$(curl -s -X GET "${NPM_HOST}/api/nginx/proxy-hosts" \
   -H "Authorization: Bearer $NPM_TOKEN" \
   | jq -r ".[]? | select(.domain_names[]? == \"$FULL_DOMAIN\")")
@@ -69,7 +73,7 @@ else
   CERT_ID=0
 fi
 
-# 5. SSL (Let's Encrypt) mit DNS-Check
+# 6. SSL (Let's Encrypt) mit DNS-Check
 if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
   echo "🔐 Prüfe DNS-Auflösung vor SSL-Anforderung..."
   
@@ -81,13 +85,13 @@ if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
     # Prüfe ob die Domain auf die richtige IP auflöst (nutzt Cloudflare DNS zum Check)
     CURRENT_IP=$(nslookup "$FULL_DOMAIN" 1.1.1.1 | grep "Address" | tail -n1 | awk '{print $2}')
     
-    if [ "$CURRENT_IP" == "$DEPLOY_HOST" ]; then
+    if [ "$CURRENT_IP" == "$CLEAN_IP" ]; then
       echo "✅ DNS erfolgreich aufgelöst auf $CURRENT_IP"
       RESOLVED=true
       break
     fi
     
-    echo "⏳ DNS noch nicht bereit (aktuell: '$CURRENT_IP', erwartet: '$DEPLOY_HOST'). Warte 20s... ($((COUNT+1))/$MAX_RETRIES)"
+    echo "⏳ DNS noch nicht bereit (aktuell: '$CURRENT_IP', erwartet: '$CLEAN_IP'). Warte 20s... ($((COUNT+1))/$MAX_RETRIES)"
     sleep 20
     COUNT=$((COUNT+1))
   done
@@ -122,6 +126,3 @@ fi
 
 echo "✅ Setup abgeschlossen."
 echo "DEPLOY_URL=$FULL_DOMAIN" >> $GITHUB_OUTPUT
-
-
-
