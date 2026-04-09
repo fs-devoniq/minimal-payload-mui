@@ -3,9 +3,14 @@ set -e
 
 if [ -f "/run/secrets/payload_env" ]; then
   echo "Loading environment variables from payload_env secret..."
-  set -a
-  . /run/secrets/payload_env
-  set +a
+  # Sicher einlesen ohne 'source'/'eval', um Fehler durch Sonderzeichen in Passwörtern zu vermeiden
+  while IFS='=' read -r key value; do
+    case "$key" in
+        '#'*|"") continue ;;
+    esac
+    value=$(echo "$value" | sed -e "s/^'//" -e "s/'$//" -e 's/^"//' -e 's/"$//')
+    export "$key=$value"
+  done < "/run/secrets/payload_env"
 else
   echo "ERROR: Secret file payload_env not found."
   exit 1

@@ -4,9 +4,18 @@ set -e
 # Secrets laden (enthaelt u.a. DATABASE_URL und PAYLOAD_SECRET)
 if [ -f "/run/secrets/payload_env" ]; then
   echo "Loading environment variables from payload_env secret..."
-  set -a
-  . /run/secrets/payload_env
-  set +a
+  # Sicher einlesen ohne 'source'/'eval', um Fehler durch Sonderzeichen in Passwörtern zu vermeiden
+  while IFS='=' read -r key value; do
+    # Ignoriere leere Zeilen und Kommentare
+    case "$key" in
+        '#'*|"") continue ;;
+    esac
+    
+    # Entferne eventuelle umschließende Anführungszeichen (einfach oder doppelt)
+    value=$(echo "$value" | sed -e "s/^'//" -e "s/'$//" -e 's/^"//' -e 's/"$//')
+    
+    export "$key=$value"
+  done < "/run/secrets/payload_env"
 else
   echo "Secret file payload_env not found. Skipping secret injection."
 fi
