@@ -9,7 +9,7 @@ WORKDIR /app
 # Install dependencies in a deterministic way (lockfile-based).
 # Use yarn.lock to avoid fetching unintended versions.
 COPY package.json yarn.lock .yarnrc ./
-RUN yarn install --frozen-lockfile
+RUN yarn cache clean && yarn install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -20,12 +20,11 @@ COPY . .
 # Create it so `COPY --from=builder /app/public ...` never fails.
 RUN mkdir -p public
 
-# Dummy environment variables for the build
-ENV PAYLOAD_IGNORE_DATABASE=true
-ENV DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
-ENV PAYLOAD_SECRET=dummy
-
-RUN yarn build
+# Build environment variables (passed only to the build command to avoid leaking into image layers)
+RUN PAYLOAD_IGNORE_DATABASE=true \
+    DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy \
+    PAYLOAD_SECRET=dummy_secret_for_build \
+    yarn build
 
 # Production image, copy all the files and run next
 FROM base AS runner
