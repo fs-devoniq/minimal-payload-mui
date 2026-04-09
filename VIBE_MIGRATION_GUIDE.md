@@ -25,7 +25,7 @@ Bevor du den Workflow startest, müssen folgende Werkzeuge auf deinem System ins
 - **Yarn:** Öffne dein Terminal und führe `npm install -g yarn` aus.
 - **Docker:** [Docker Desktop für Windows](https://www.docker.com/products/docker-desktop/) (inkl. WSL2-Backend) installieren.
 
-### 🛠️ Globale Tools & Basis-Setup (Alle Systeme)
+## Globale Tools & Basis-Setup (Alle Systeme)
 1. **Gemini CLI installieren:** Das KI-Tool, das die Migration ausführt:
    ```bash
    npm install -g @google/gemini-cli
