@@ -28,6 +28,19 @@ git clone -c core.sshCommand="ssh -i ~/.ssh/fscheel@github.com" git@github.com:f
 git clone -c core.sshCommand="ssh -i ~/.ssh/fscheel@github.com" git@github.com:fs-devoniq/[projektname]-website.git
 ```
 
+### Umgebungsvariablen konfigurieren
+Das Template benötigt eine `.env` Datei. Kopiere die Vorlage und passe die Datenbank-URL an.
+
+```bash
+# In das Website-Verzeichnis wechseln
+cd [projektname]-website
+
+# .env erstellen
+cp .env.example .env
+```
+Öffne die `.env` und stelle sicher, dass die `DATABASE_URI` deinen Datenbanknamen enthält:
+`DATABASE_URI=postgresql://postgres:postgres@127.0.0.1:5432/[projektname]_db`
+
 ### Datenbank vorbereiten (Docker)
 Stelle sicher, dass dein lokaler Postgres-Container läuft.
 ```bash
@@ -39,22 +52,24 @@ docker exec -it postgres-container createdb -U postgres [projektname]_db
 ```
 
 ### Migration ausführen
-Wechsle in das neu geklonte Website-Verzeichnis und starte das Migrations-Skript.
+Stelle sicher, dass das Gemini CLI installiert ist (`npm install -g @google/gemini-cli`). Starte dann die Migration:
 
 ```bash
-# In das Website-Verzeichnis wechseln
-cd [projektname]-website  # oder 'z [projektname]-website'
-
-# Migrations-Skript starten (Pfad zum Vibe-Projekt anpassen!)
+# Migrations-Skript starten
 GEMINI_API_KEY="[DEIN_API_KEY]" ./migrate-vibe-blocks.sh ../[projektname]-vibe
 ```
 
 ### Abhängigkeiten installieren & Server starten
-Sobald das Skript erfolgreich durchgelaufen ist, installiere die NPM-Pakete und starte die Entwicklungsumgebung:
-
 ```bash
 yarn install
 yarn dev
 ```
 
-🎉 **Fertig!** Das Projekt sollte nun lokal unter `http://localhost:3000` erreichbar sein und alle Vibes in saubere Payload-Blöcke und MUI-Komponenten umgewandelt haben.
+## 4. Finalisierung im CMS
+1. Öffne `http://localhost:3000/admin`.
+2. Erstelle deinen **ersten Admin-Benutzer**.
+3. Gehe zu **Settings > Branding** und lade dein Logo hoch.
+4. Erstelle unter **Pages** eine neue Seite (z.B. "Home"), füge die migrierten Blöcke hinzu und veröffentliche sie.
+5. Gehe zu **Settings > General** und wähle die neu erstellte Seite im Feld **Home Page** aus. Speichere die Einstellungen.
+
+🎉 **Fertig!** Das Projekt sollte nun lokal unter `http://localhost:3000` direkt mit deiner neuen Startseite erreichbar sein. Alle Vibes wurden in saubere Payload-Blöcke und MUI-Komponenten umgewandelt.
