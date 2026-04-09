@@ -7,9 +7,9 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies in a deterministic way (lockfile-based).
-# Use package-lock.json (npm) to avoid fetching unintended versions.
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci
+# Use yarn.lock to avoid fetching unintended versions.
+COPY package.json yarn.lock .yarnrc ./
+RUN yarn install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -25,7 +25,7 @@ ENV PAYLOAD_IGNORE_DATABASE=true
 ENV DATABASE_URL=postgres://dummy:dummy@localhost:5432/dummy
 ENV PAYLOAD_SECRET=dummy
 
-RUN npm run build
+RUN yarn build
 
 # Production image, copy all the files and run next
 FROM base AS runner
