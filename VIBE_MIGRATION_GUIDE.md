@@ -2,6 +2,41 @@
 
 Diese Anleitung beschreibt den kompletten Ablauf, um ein in AI Studio ("Vibe") generiertes Projekt in ein sauberes Payload CMS + Next.js Setup (basierend auf dem `minimal-payload-mui` Template) zu migrieren.
 
+## 0. Voraussetzungen & Installationen
+
+Bevor du den Workflow startest, müssen folgende Werkzeuge auf deinem System installiert sein:
+
+<!-- tabset -->
+<!-- tab:🍎 macOS -->
+- **Homebrew** (Paketmanager) sollte installiert sein.
+- **Git, Node.js & Yarn:** `brew install git node yarn`
+- **Docker:** [Docker Desktop für Mac](https://www.docker.com/products/docker-desktop/) herunterladen und installieren.
+<!-- tab:🐧 Linux (Debian/Ubuntu) -->
+- **Git & Node.js:** `sudo apt update && sudo apt install git nodejs npm`
+- **Yarn:** `sudo npm install -g yarn`
+- **Docker:** [Docker Engine installieren](https://docs.docker.com/engine/install/ubuntu/) und den Dienst starten.
+<!-- tab:🪟 Windows -->
+*Tipp: Wir empfehlen die Nutzung des Terminals über **WSL2** (Windows Subsystem for Linux) oder die **Git Bash**.*
+- **Git:** [Git for Windows](https://git-scm.com/download/win) herunterladen und installieren.
+- **Node.js:** [Node.js Installer](https://nodejs.org/) herunterladen und ausführen.
+- **Yarn:** Öffne dein Terminal und führe `npm install -g yarn` aus.
+- **Docker:** [Docker Desktop für Windows](https://www.docker.com/products/docker-desktop/) (inkl. WSL2-Backend) installieren.
+<!-- /tabset -->
+
+### 🛠️ Globale Tools & Basis-Setup (Alle Systeme)
+1. **Gemini CLI installieren:** Das KI-Tool, das die Migration ausführt:
+   ```bash
+   npm install -g @google/gemini-cli
+   ```
+2. **Laufende Datenbank:** Das Migrations-Skript setzt voraus, dass ein Docker-Container mit dem exakten Namen `postgres-container` läuft.
+   Falls du noch keinen hast, starte ihn einmalig mit diesem Befehl:
+   ```bash
+   docker run --name postgres-container -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
+   ```
+3. **GitHub SSH-Zugang:** Stelle sicher, dass du auf GitHub via SSH zugreifen kannst (dein Private-Key `~/.ssh/id_rsa` oder ähnlich muss bei GitHub hinterlegt sein), da das Skript Git-Clone-Befehle über SSH ausführt.
+
+---
+
 ## 1. AI Studio (Das "Vibe" Projekt)
 1. **Vibe Coden:** In AI Studio mit dem entsprechenden System Prompt das Frontend generieren lassen.
 2. **Exportieren:** Auf den Reiter **Github** wechseln.
