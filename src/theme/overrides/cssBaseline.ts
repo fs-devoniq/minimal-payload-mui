@@ -20,7 +20,7 @@ export const cssBaselineOverrides = {
     },
 
     /* Firefox */
-    scrollbarWidth: 'thin',
+    scrollbarWidth: 'thin' as const,
     scrollbarColor: `${theme.palette.custom.lightGrey} transparent`,
   }),
 }

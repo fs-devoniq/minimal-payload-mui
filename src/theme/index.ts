@@ -68,7 +68,7 @@ export const createAppTheme = (colors?: ThemeColors | null) => {
         fontWeight: 900,
         textTransform: 'uppercase',
         lineHeight: 0.9,
-        color: dynamicPalette.text.primary,
+        color: dynamicPalette.text?.primary,
       },
       h3: {
         fontSize: 'clamp(1.25rem, 1.1rem + 0.5vw, 1.45rem)',
@@ -79,7 +79,7 @@ export const createAppTheme = (colors?: ThemeColors | null) => {
         fontSize: 'clamp(3rem, 2.3rem + 2vw, 4rem)',
         fontWeight: 'bold',
         lineHeight: 1,
-        color: dynamicPalette.primary.main,
+        color: (dynamicPalette.primary as any)?.main,
         display: 'block',
       },
     },
