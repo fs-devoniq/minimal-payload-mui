@@ -84,17 +84,60 @@ jobs:
 
       - name: Deploy image
         env:
-          DOCKER_HOST: "ssh://deploy@87.106.232.205"
+          DOCKER_HOST: "ssh://${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}"
           GIT_COMMIT_HASH: ${{ github.sha }}
           STACK_NAME: ${{ steps.meta.outputs.REPO_NAME }}
           IMAGE_REPO: ${{ steps.meta.outputs.IMAGE_REPO }}
           DOCKER_PULL_USERNAME: ${{ secrets.DOCKER_PULL_USERNAME }}
           DOCKER_PULL_SECRET: ${{ secrets.DOCKER_PULL_SECRET }}
+          # Diese Secrets müssen in den GitHub Repository Settings angelegt werden
+          ENV_PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
-          ssh-keyscan -H "87.106.232.205" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           echo "$DOCKER_PULL_SECRET" | docker login ghcr.io -u "$DOCKER_PULL_USERNAME" --password-stdin
           docker pull "${IMAGE_REPO}:${GIT_COMMIT_HASH}"
           docker pull "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate"
+
+          # Helper Funktion für sicheres Secret-Management
+          create_or_update_secret() {
+            local secret_name=$1
+            local secret_value=$2
+            
+            # Prüfen ob Secret existiert
+            if docker secret inspect "$secret_name" >/dev/null 2>&1; then
+              echo "Secret $secret_name existiert bereits. Versuch es zu löschen..."
+              # Löschen schlägt fehl, wenn ein Service es gerade benutzt
+              if ! docker secret rm "$secret_name"; then
+                echo "Warnung: Secret $secret_name wird aktuell verwendet und kann nicht aktualisiert werden."
+                return 0
+              fi
+            fi
+            
+            # Neues Secret anlegen
+            echo "$secret_value" | docker secret create "$secret_name" -
+            echo "Secret $secret_name erfolgreich angelegt."
+          }
+
+          echo "Bereite Docker Secrets vor..."
+          
+          # DATABASE_URL dynamisch aus den anderen DB-Werten zusammenbauen
+          # Format: postgres://USER:PASSWORD@HOST:PORT/DATABASE
+          # Host '${STACK_NAME}_db' entspricht dem Service-Namen im Swarm-Netzwerk
+          DYNAMIC_DATABASE_URL="postgres://${DB_USER}:${DB_PASSWORD}@${STACK_NAME}_db:5432/${DB_NAME}"
+          
+          # App Environment Secret zusammenbauen
+          APP_ENV="PAYLOAD_SECRET=${ENV_PAYLOAD_SECRET}
+          DATABASE_URL=${DYNAMIC_DATABASE_URL}"
+          
+          # Secrets anlegen
+          create_or_update_secret "${STACK_NAME}_env" "$APP_ENV"
+          create_or_update_secret "${STACK_NAME}_db-user" "$DB_USER"
+          create_or_update_secret "${STACK_NAME}_db-pw" "$DB_PASSWORD"
+          create_or_update_secret "${STACK_NAME}_db-name" "$DB_NAME"
 
           docker stack deploy -c stack.yaml --with-registry-auth $STACK_NAME
           docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate" ${STACK_NAME}_migrations

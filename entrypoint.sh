@@ -2,13 +2,13 @@
 set -e
 
 # Secrets laden (enthaelt u.a. DATABASE_URL und PAYLOAD_SECRET)
-if [ -f "/run/secrets/minimal-payload-mui_env" ]; then
-  echo "Loading environment variables from minimal-payload-mui_env secret..."
+if [ -f "/run/secrets/payload_env" ]; then
+  echo "Loading environment variables from payload_env secret..."
   set -a
-  . /run/secrets/minimal-payload-mui_env
+  . /run/secrets/payload_env
   set +a
 else
-  echo "Secret file minimal-payload-mui_env not found. Skipping secret injection."
+  echo "Secret file payload_env not found. Skipping secret injection."
 fi
 
 # Pflichtwerte validieren, damit Fehler direkt sichtbar sind

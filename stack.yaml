@@ -11,7 +11,8 @@ services:
     depends_on:
       - db
     secrets:
-      - ${STACK_NAME}_env
+      - source: ${STACK_NAME}_env
+        target: payload_env
     volumes:
       - ${STACK_NAME}_app_uploads:/app/uploads
 
@@ -20,7 +21,8 @@ services:
     networks:
       - frontend
     secrets:
-      - ${STACK_NAME}_env
+      - source: ${STACK_NAME}_env
+        target: payload_env
     deploy:
       placement:
         constraints:
@@ -32,13 +34,16 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER_FILE: /run/secrets/${STACK_NAME}_db-user
-      POSTGRES_PASSWORD_FILE: /run/secrets/${STACK_NAME}_db-pw
-      POSTGRES_DB_FILE: /run/secrets/${STACK_NAME}_db-name
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_pw
+      POSTGRES_DB_FILE: /run/secrets/db_name
     secrets:
-      - ${STACK_NAME}_db-user
-      - ${STACK_NAME}_db-pw
-      - ${STACK_NAME}_db-name
+      - source: ${STACK_NAME}_db-user
+        target: db_user
+      - source: ${STACK_NAME}_db-pw
+        target: db_pw
+      - source: ${STACK_NAME}_db-name
+        target: db_name
     volumes:
       - ${STACK_NAME}_db:/var/lib/postgresql/data
     networks:

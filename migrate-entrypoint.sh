@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-if [ -f "/run/secrets/devoniq-website_env" ]; then
-  echo "Loading environment variables from devoniq-website_env secret..."
+if [ -f "/run/secrets/payload_env" ]; then
+  echo "Loading environment variables from payload_env secret..."
   set -a
-  . /run/secrets/devoniq-website_env
+  . /run/secrets/payload_env
   set +a
 else
-  echo "ERROR: Secret file devoniq-website_env not found."
+  echo "ERROR: Secret file payload_env not found."
   exit 1
 fi
 
