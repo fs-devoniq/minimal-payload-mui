@@ -13,8 +13,7 @@ Dieses Repository dient als zentrale Fabrik, um Vibe-Projekte in Payload CMS Web
 
 Erstelle den Ordner `.github/workflows/` und lege dort folgende zwei Dateien an:
 
-### `initial-migration.yml` (Die Geburtsstunde)
-Dieser Workflow erstellt aus einem Vibe-Repo eine neue Website.
+### `initial-migration.yml`
 
 ```yaml
 name: Initial Vibe Migration
@@ -73,10 +72,33 @@ jobs:
         run: |
           git remote add target https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.event.inputs.target_repo }}
           git push -u target main --force
+
+      - name: Setup Auto-Sync in Vibe Repo
+        run: |
+          mkdir -p vibe-project/.github/workflows
+          cat <<EOF > vibe-project/.github/workflows/vibe-sync-trigger.yml
+          name: Trigger Factory Sync
+          on: [push]
+          jobs:
+            notify:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Remote Dispatch
+                  run: |
+                    curl -X POST https://api.github.com/repos/${{ github.repository }}/dispatches \\
+                    -H "Accept: application/vnd.github.v3+json" \\
+                    -H "Authorization: Bearer ${{ secrets.GH_PAT }}" \\
+                    -d '{"event_type": "vibe_push", "client_payload": {"vibe_repo": "${{ github.event.inputs.vibe_repo }}", "target_repo": "${{ github.event.inputs.target_repo }}"}}'
+          EOF
+          cd vibe-project
+          git config user.name "Vibe Factory"
+          git config user.email "factory@devoniq.com"
+          git add .github/workflows/vibe-sync-trigger.yml
+          git commit -m "ci(sync): add automatic factory trigger"
+          git push origin main
 ```
 
-### `incremental-sync.yml` (Das Update-System)
-Dieser Workflow wird getriggert, wenn du im Vibe-Repo etwas pushst.
+### `incremental-sync.yml`
 
 ```yaml
 name: Incremental Vibe Sync
@@ -114,6 +136,7 @@ jobs:
         working-directory: ./target-project
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DATABASE_URI: postgresql://postgres:postgres@localhost:5432/postgres
         run: |
           chmod +x ./sync-vibe-updates.sh
           ./sync-vibe-updates.sh ../vibe-project .
@@ -128,11 +151,3 @@ jobs:
           body: "Dieser PR wurde automatisch erstellt, um die neuesten UI-Änderungen aus AI Studio zu synchronisieren."
           branch: vibe-sync-update
 ```
-
-## 3. Webhook im Vibe-Repo einrichten
-Damit der Sync automatisch startet, musst du im Vibe-Repo unter **Settings > Webhooks** einen Webhook hinzufügen:
-- **Payload URL:** `https://api.github.com/repos/[DEIN_USER]/vibe-factory/dispatches`
-- **Content type:** `application/json`
-- **Secret:** (optional)
-- **Events:** `Just the push event`
-- **Payload:** (muss via GitHub Action im Vibe Repo oder manuell gesendet werden, um den `repository_dispatch` zu triggern).
