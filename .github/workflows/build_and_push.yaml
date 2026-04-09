@@ -139,7 +139,11 @@ jobs:
           create_or_update_secret "${STACK_NAME}_db-pw" "$DB_PASSWORD"
           create_or_update_secret "${STACK_NAME}_db-name" "$DB_NAME"
 
-          docker stack deploy -c stack.yaml --with-registry-auth $STACK_NAME
+          # YAML-Datei rendern, da 'docker stack deploy' keine Variablen in Top-Level-Keys (volumes/secrets) erlaubt
+          # Da wir lokal (in der Action) sind, können wir envsubst nutzen
+          envsubst < stack.yaml > stack-rendered.yaml
+
+          docker stack deploy -c stack-rendered.yaml --with-registry-auth $STACK_NAME
           docker service update --detach=true --image "${IMAGE_REPO}:${GIT_COMMIT_HASH}-migrate" ${STACK_NAME}_migrations
           docker service scale --detach=true ${STACK_NAME}_migrations=1
 
