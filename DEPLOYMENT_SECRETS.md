@@ -21,6 +21,18 @@ Gehe in deinem GitHub Repository zu:
 | `DB_PASSWORD` | Das Passwort für die PostgreSQL Datenbank. | `sicheres_db_passwort_123!` |
 | `DB_NAME` | Der Name der PostgreSQL Datenbank. | `payload_db` |
 
+### Automatisches Subdomain- & Proxy-Routing (IONOS & NPM)
+
+Diese Secrets werden benötigt, um bei jedem Deployment automatisch eine UUID-Subdomain zu generieren, sie im DNS zu registrieren und im Nginx Proxy Manager (NPM) auf den neuen Docker-Service weiterzuleiten.
+
+| Secret Name | Beschreibung | Beispielwert |
+| :--- | :--- | :--- |
+| `IONOS_API_KEY` | Der API-Key für IONOS (Format: `publicprefix.secret`). | `1234abcd.efgh5678ijkl` |
+| `IONOS_ZONE_ID` | Die UUID der Domain-Zone bei IONOS (z.B. für `devoniq.de`). | `a1b2c3d4-e5f6-7890-1234-abcdef567890` |
+| `NPM_HOST` | Die Basis-URL der NPM API (wo NPM erreichbar ist). | `http://87.106.232.205:81` |
+| `NPM_USER` | Die E-Mail-Adresse für den NPM Admin-Login. | `admin@devoniq.de` |
+| `NPM_PASS` | Das Passwort für den NPM Admin-Login. | `SuperSicher123!` |
+
 ## Funktionsweise der Automatisierung
 
 1.  **Dynamische Namen:** Der Stack-Name und alle Docker-Ressourcen werden automatisch vom Namen deines GitHub Repositories abgeleitet.
