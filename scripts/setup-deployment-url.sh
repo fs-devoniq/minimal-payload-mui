@@ -24,30 +24,23 @@ IONOS_RESPONSE=$(curl -s -X POST "https://api.hosting.ionos.com/dns/v1/zones/$IO
        \"disabled\": false
      }]")
 
-# IONOS Erfolg ist ein Array, startet also mit [
+echo "📦 IONOS Antwort: $IONOS_RESPONSE"
+
 if [[ "$IONOS_RESPONSE" == \[* ]]; then
-  echo "✅ DNS Record erfolgreich angelegt."
+  echo "✅ DNS Record erfolgreich angelegt (oder bereits vorhanden)."
 elif echo "$IONOS_RESPONSE" | grep -q "ALREADY_EXISTS"; then
-  echo "ℹ️ DNS Record existiert bereits bei IONOS. Alles okay."
+  echo "ℹ️ DNS Record existiert bereits bei IONOS."
 else
   echo "❌ IONOS FEHLER: $IONOS_RESPONSE"
-  # Wir brechen hier NICHT ab, damit NPM es trotzdem versuchen kann, 
-  # falls der Eintrag manuell angelegt wurde.
 fi
 
-# 3. NPM Login & Token holen
-echo "🔑 Logge bei Nginx Proxy Manager ein ($NPM_HOST)..."
+# 3. NPM Login
+echo "🔑 Logge bei Nginx Proxy Manager ein..."
 NPM_TOKEN=$(curl -s -X POST "${NPM_HOST}/api/tokens" \
   -H "Content-Type: application/json" \
   -d "{\"identity\": \"$NPM_USER\", \"secret\": \"$NPM_PASS\"}" | jq -r .token)
 
-if [ "$NPM_TOKEN" == "null" ] || [ -z "$NPM_TOKEN" ]; then
-  echo "❌ Fehler: NPM Login fehlgeschlagen!"
-  exit 1
-fi
-
 # 4. NPM Proxy Host prüfen oder erstellen
-echo "🔍 Suche bestehenden Proxy Host in NPM..."
 EXISTING_HOST=$(curl -s -X GET "${NPM_HOST}/api/nginx/proxy-hosts" \
   -H "Authorization: Bearer $NPM_TOKEN" \
   | jq -r ".[]? | select(.domain_names[]? == \"$FULL_DOMAIN\")")
@@ -57,9 +50,9 @@ FORWARD_HOST="${STACK_NAME}_app"
 if [ -n "$EXISTING_HOST" ]; then
   HOST_ID=$(echo "$EXISTING_HOST" | jq -r .id)
   CERT_ID=$(echo "$EXISTING_HOST" | jq -r .certificate_id)
-  echo "ℹ️ Proxy Host existiert bereits (ID: $HOST_ID)."
+  echo "ℹ️ Proxy Host existiert (ID: $HOST_ID)."
 else
-  echo "🌐 Erstelle neuen NPM Proxy Host: $FULL_DOMAIN -> http://$FORWARD_HOST:3000"
+  echo "🌐 Erstelle neuen Proxy Host..."
   CREATE_RESPONSE=$(curl -s -X POST "${NPM_HOST}/api/nginx/proxy-hosts" \
     -H "Authorization: Bearer $NPM_TOKEN" \
     -H "Content-Type: application/json" \
@@ -68,50 +61,60 @@ else
       \"forward_scheme\": \"http\",
       \"forward_host\": \"$FORWARD_HOST\",
       \"forward_port\": 3000,
-      \"access_list_id\": 0,
-      \"certificate_id\": 0,
       \"ssl_forced\": false,
       \"block_exploits\": true,
-      \"allow_websocket_upgrade\": true,
-      \"meta\": {},
-      \"advanced_config\": \"\",
-      \"locations\": []
+      \"allow_websocket_upgrade\": true
     }")
   HOST_ID=$(echo "$CREATE_RESPONSE" | jq -r .id)
   CERT_ID=0
-  echo "✅ Proxy Host erstellt (ID: $HOST_ID)."
 fi
 
-# 5. SSL (Let's Encrypt) einrichten
+# 5. SSL (Let's Encrypt) mit DNS-Check
 if [ "$CERT_ID" == "0" ] || [ "$CERT_ID" == "null" ]; then
-  echo "🔐 Fordere SSL Zertifikat (Let's Encrypt) an..."
-  echo "⏳ Warte 15 Sekunden auf DNS Propagation..."
-  sleep 15
+  echo "🔐 Prüfe DNS-Auflösung vor SSL-Anforderung..."
+  
+  MAX_RETRIES=10
+  COUNT=0
+  RESOLVED=false
+  
+  while [ $COUNT -lt $MAX_RETRIES ]; do
+    # Prüfe ob die Domain auf die richtige IP auflöst (nutzt Cloudflare DNS zum Check)
+    CURRENT_IP=$(nslookup "$FULL_DOMAIN" 1.1.1.1 | grep "Address" | tail -n1 | awk '{print $2}')
+    
+    if [ "$CURRENT_IP" == "$DEPLOY_HOST" ]; then
+      echo "✅ DNS erfolgreich aufgelöst auf $CURRENT_IP"
+      RESOLVED=true
+      break
+    fi
+    
+    echo "⏳ DNS noch nicht bereit (aktuell: '$CURRENT_IP', erwartet: '$DEPLOY_HOST'). Warte 20s... ($((COUNT+1))/$MAX_RETRIES)"
+    sleep 20
+    COUNT=$((COUNT+1))
+  done
 
-  SSL_RESPONSE=$(curl -s -X PUT "${NPM_HOST}/api/nginx/proxy-hosts/$HOST_ID" \
-    -H "Authorization: Bearer $NPM_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"domain_names\": [\"$FULL_DOMAIN\"],
-      \"forward_scheme\": \"http\",
-      \"forward_host\": \"$FORWARD_HOST\",
-      \"forward_port\": 3000,
-      \"certificate_id\": \"new\",
-      \"ssl_forced\": true,
-      \"http2_support\": true,
-      \"hsts_enabled\": false,
-      \"hsts_subdomains\": false,
-      \"meta\": {
-        \"letsencrypt_email\": \"$NPM_USER\",
-        \"letsencrypt_agree\": true
-      }
-    }")
-
-  if echo "$SSL_RESPONSE" | grep -q "certificate_id"; then
-    echo "✅ SSL erfolgreich aktiviert."
+  if [ "$RESOLVED" = true ]; then
+    echo "🔐 Fordere SSL Zertifikat an..."
+    SSL_RESPONSE=$(curl -s -X PUT "${NPM_HOST}/api/nginx/proxy-hosts/$HOST_ID" \
+      -H "Authorization: Bearer $NPM_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"domain_names\": [\"$FULL_DOMAIN\"],
+        \"forward_scheme\": \"http\",
+        \"forward_host\": \"$FORWARD_HOST\",
+        \"forward_port\": 3000,
+        \"certificate_id\": \"new\",
+        \"ssl_forced\": true,
+        \"meta\": { \"letsencrypt_email\": \"$NPM_USER\", \"letsencrypt_agree\": true }
+      }")
+    
+    if echo "$SSL_RESPONSE" | grep -q "certificate_id"; then
+      echo "✅ SSL erfolgreich aktiviert."
+    else
+      echo "❌ SSL FEHLER: $SSL_RESPONSE"
+    fi
   else
-    echo "❌ SSL FEHLER: $SSL_RESPONSE"
-    echo "ℹ️ Hinweis: SSL schlägt fehl, wenn die Domain noch nicht im Internet aufgelöst werden kann."
+    echo "⚠️ DNS-Check Timeout. SSL wurde nicht aktiviert, da die Domain noch nicht auf die IP zeigt."
+    echo "ℹ️ Sobald DNS aktiv ist, wird der nächste Deployment-Lauf SSL automatisch aktivieren."
   fi
 else
   echo "✅ SSL ist bereits aktiv."
@@ -119,6 +122,6 @@ fi
 
 echo "✅ Setup abgeschlossen."
 echo "DEPLOY_URL=$FULL_DOMAIN" >> $GITHUB_OUTPUT
-echo "SUBDOMAIN=$SUBDOMAIN" >> $GITHUB_OUTPUT
+
 
 
