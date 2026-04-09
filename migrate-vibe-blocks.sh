@@ -208,6 +208,10 @@ echo -e "🗄️ Erstelle Payload Datenbank-Migration..."
 
 # Da wir yarn nutzen, rufen wir yarn payload migrate:create auf
 MIGRATION_NAME="vibe_migration"
+# Setze Dummy-Werte für CI/CD Umgebungen, in denen keine .env Datei existiert.
+# Für das Generieren der Migration wird keine echte Datenbank benötigt.
+PAYLOAD_SECRET="${PAYLOAD_SECRET:-dummy_secret_for_ci_to_bypass_validation}" \
+DATABASE_URL="${DATABASE_URL:-postgres://dummy:dummy@localhost:5432/dummy}" \
 yarn payload migrate:create $MIGRATION_NAME
 
 if [ $? -ne 0 ]; then

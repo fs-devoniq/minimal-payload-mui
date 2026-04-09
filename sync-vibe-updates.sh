@@ -59,6 +59,9 @@ for FILE in $CHANGED_FILES; do
 done
 
 echo -e "\n${C_CYAN}🗄️ Erstelle Payload Datenbank-Migration für die Updates...${C_RESET}"
+# Setze Dummy-Werte für CI/CD Umgebungen
+PAYLOAD_SECRET="${PAYLOAD_SECRET:-dummy_secret_for_ci_to_bypass_validation}" \
+DATABASE_URL="${DATABASE_URL:-postgres://dummy:dummy@localhost:5432/dummy}" \
 yarn payload migrate:create vibe_sync_update
 if [ $? -ne 0 ]; then
   echo -e "${C_YELLOW}⚠️ Migration konnte nicht automatisch erstellt werden. Bitte manuell ausführen.${C_RESET}"
