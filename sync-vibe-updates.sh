@@ -15,6 +15,9 @@ C_GREEN="\033[32m"
 C_YELLOW="\033[33m"
 C_RESET="\033[0m"
 
+echo -e "${C_CYAN}📦 Installiere Projektabhängigkeiten (yarn install)...${C_RESET}"
+cd "$TARGET_DIR" && yarn install --silent && cd - > /dev/null
+
 echo -e "${C_CYAN}🔄 Starte inkrementellen Vibe-Sync...${C_RESET}"
 
 # 1. Geänderte Dateien im Vibe-Repo finden (Letzter Commit)

@@ -67,12 +67,15 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-# --- 2. VALIDIERUNG ---
+# --- 2. VALIDIERUNG & SETUP ---
 if [ -z "$VIBE_DIR" ]; then
   echo -e "${C_RED}❌ Bitte gib den Pfad zu deinem Vibe-Projekt an.${C_RESET}"
   echo -e "${C_YELLOW}💡 Nutzung: ./migrate-vibe-blocks.sh [-v|--verbose] /Users/name/git/vibe-projekt${C_RESET}"
   exit 1
 fi
+
+echo -e "${C_CYAN}📦 Installiere Projektabhängigkeiten (yarn install)...${C_RESET}"
+yarn install --silent
 
 BLOCKS_PATH="$VIBE_DIR/src/blocks"
 
