@@ -11,7 +11,7 @@ Die Factory ist dein zentrales Kontrollzentrum. Sie nimmt den "rohen" UI-Code au
 Bevor du startest, stelle sicher, dass:
 1. Dein `vibe-factory` Repository existiert.
 2. Die Secrets `GEMINI_API_KEY` und `GH_PAT` in der Factory hinterlegt sind.
-3. Du den System-Prompt aus `AI_STUDIO_PROMPT.md` in deinem AI Studio Projekt verwendest.
+3. Du den System-Prompt aus `docs/AI_STUDIO_PROMPT.md` in deinem AI Studio Projekt verwendest.
 
 ---
 
@@ -21,11 +21,14 @@ Diesen Schritt führst du aus, wenn du ein neues Vibe-Projekt zum ersten Mal in 
 
 ### Manuelle Schritte:
 1. Erstelle ein leeres, privates Ziel-Repository auf GitHub (z.B. `projekt-website`).
-2. Gehe in dein **vibe-factory** Repo -> **Actions** -> **Initial Vibe Migration**.
-3. Klicke auf **Run workflow** und fülle die Felder aus:
+2. **WICHTIG:** Bevor du die Action startest, hinterlege die Deployment Secrets in deinem neuen Ziel-Repo!
+   - Gehe in deinem neuen Repo auf **Settings > Secrets and variables > Actions > New repository secret**.
+   - Welche Secrets du genau brauchst (inkl. IONOS und NPM für die Subdomain), steht in der [DEPLOYMENT_SECRETS.md](./DEPLOYMENT_SECRETS.md).
+3. Gehe in dein **vibe-factory** Repo -> **Actions** -> **Initial Vibe Migration**.
+4. Klicke auf **Run workflow** und fülle die Felder aus:
    - `vibe_repo`: Das Repo aus AI Studio (z.B. `fs-devoniq/projekt-vibe`)
    - `target_repo`: Dein leeres Ziel-Repo (z.B. `fs-devoniq/projekt-website`)
-4. Klicke auf **Run workflow**.
+5. Klicke auf **Run workflow**.
 
 ### Was im Hintergrund passiert:
 - **Cloud Runner:** GitHub startet einen virtuellen Server (Ubuntu).
@@ -33,7 +36,8 @@ Diesen Schritt führst du aus, wenn du ein neues Vibe-Projekt zum ersten Mal in 
 - **Template-Klon:** Die Factory klont das `minimal-payload-mui` Template.
 - **Vibe-Klon:** Dein AI Studio Code wird daneben geklont.
 - **Gemini Migration:** Das Skript `migrate-vibe-blocks.sh` läuft im Runner. Die KI analysiert alle Vibe-Komponenten, baut MUI-Versionen und erstellt die Payload-Block-Konfigurationen.
-- **Deployment:** Der fertige Code wird per "Force Push" in dein Ziel-Repo geschoben.
+- **Push ins Ziel-Repo:** Der fertige Code wird per "Force Push" in dein Ziel-Repo (`projekt-website`) geschoben.
+- **Automatisches Deployment:** Durch den Push auf `main` im Ziel-Repo triggert sich dort sofort die `build_and_push.yaml`. Diese generiert die Subdomain, konfiguriert den Proxy und deployt die App auf den Server.
 
 ---
 
@@ -52,7 +56,7 @@ Diesen Schritt führst du aus, wenn du in AI Studio Änderungen gemacht und gepu
 - **Vibe-Updater Skill:** Die KI nutzt den spezialisierten `vibe-updater`. Er erkennt, welche Felder im CMS dazugekommen sind oder welche UI-Details sich geändert haben.
 - **Chirurgisches Update:** Anstatt alles neu zu bauen, werden bestehende Dateien gezielt aktualisiert (Refactoring).
 - **Pull Request:** Die Factory pusht die Änderungen nicht direkt in den `main` Zweig, sondern erstellt einen **Pull Request (PR)** in deinem Website-Repo.
-- **Review:** Du öffnest den PR in deinem Website-Repo, prüfst die Änderungen und klickst auf **Merge**.
+- **Review & Deploy:** Du öffnest den PR in deinem Website-Repo, prüfst die Änderungen und klickst auf **Merge**. Dadurch wird wieder das vollautomatische Deployment auf deinen Server angestoßen.
 
 ---
 
