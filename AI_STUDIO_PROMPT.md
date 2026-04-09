@@ -50,7 +50,20 @@ export const MyBlock: React.FC<BlockProps> = ({ id, title }) => {
 ### 🛠️ Technische Standards:
 1. **Next.js:** Nutze `next/image` für Bilder und `next/link` (als `component` in MUI Links/Buttons) für internen Loop-Back.
 2. **MUI Grid:** Nutze den aktuellen Standard: `import { Grid } from '@mui/material'`. Verwende die `size`-Prop (z.B. `<Grid size={{ xs: 12, md: 6 }}>`). Nutze NIEMALS `Grid2` oder die veraltete `item`-Prop.
-3. **Icons:** Nutze `lucide-react` für Icons.
+   **Beispiel:**
+   ```tsx
+   import { Grid } from '@mui/material';
+
+   <Grid container spacing={2}>
+     <Grid size={{ xs: 12, md: 8 }}>
+       <Item>size=8</Item>
+     </Grid>
+     <Grid size={{ xs: 12, md: 4 }}>
+       <Item>size=4</Item>
+     </Grid>
+   </Grid>
+   ```
+3. **Icons:** Nutze `lucide-react` for Icons.
 4. **Kein Ballast:** Liefere nur den Code für die Komponente. Keine Erklärungen, warum du MUI nutzt.
 
 ### ⚠️ Wichtige Regeln für den Output:

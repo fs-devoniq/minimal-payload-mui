@@ -39,4 +39,20 @@ Führe diese Anpassungen durch:
 - Jede Komponente MUSS eine `id` als optionales Prop akzeptieren (z.B. `id?: string`).
 - Diese `id` MUSS zwingend am äußersten Wrapper-Element (z.B. `Box`, `section`, `Container`) der Komponente gesetzt werden (`<Box id={id} ...>`), damit Payload-Anker-Links funktionieren.
 
+### 4. 🧱 Grid (v6 Standard)
+- **Problem:** Externe Tools nutzen oft `Grid2` (veraltet/inkompatibel) oder die alte `item`-Prop.
+- **Lösung:** Korrigiere alle Grid-Implementierungen auf den MUI v6 Standard.
+  - **Import:** Ersetze `import { Grid2 as Grid }` oder ähnliche Aliase durch `import { Grid } from '@mui/material';`.
+  - **Syntax:** Ersetze `item` durch die `size` Prop.
+  - **Beispiel:**
+    ```tsx
+    // Falsch
+    import { Grid2 as Grid } from '@mui/material';
+    <Grid item xs={12} md={6}>...</Grid>
+
+    // Richtig
+    import { Grid } from '@mui/material';
+    <Grid size={{ xs: 12, md: 6 }}>...</Grid>
+    ```
+
 Implementiere den Code direkt im Projekt. Halte dich mit Erklärungen kurz.
