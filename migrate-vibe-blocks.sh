@@ -213,7 +213,16 @@ yarn payload migrate:create $MIGRATION_NAME
 if [ $? -ne 0 ]; then
   echo -e "${C_YELLOW}⚠️ Migration konnte nicht erstellt werden. Bitte manuell prüfen (yarn payload migrate:create).${C_RESET}"
 else
-  echo -e "${C_GREEN}✅ Datenbank-Migration erfolgreich erstellt.${C_RESET}"
+  echo -e "${C_GREEN}✅ Payload CLI erfolgreich ausgeführt.${C_RESET}"
+  
+  # Prüfen, ob wirklich eine neue Datei in src/migrations/ erstellt wurde
+  if git status --porcelain src/migrations/ | grep -q "^??"; then
+    git add src/migrations/
+    git commit -m "chore(db): auto-generate migration after vibe migration"
+    echo -e "${C_GREEN}💾 Neue Migration erkannt und committet.${C_RESET}"
+  else
+    echo -e "${C_YELLOW}ℹ️ Keine Schema-Änderungen erkannt. Es wurde keine neue Migration erstellt.${C_RESET}"
+  fi
 fi
 
 echo -e "\n${C_GREEN}=======================================================${C_RESET}"
