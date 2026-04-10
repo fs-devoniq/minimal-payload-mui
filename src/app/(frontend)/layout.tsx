@@ -15,7 +15,7 @@ export async function generateViewport(): Promise<Viewport> {
   }
   try {
     const payload = await getPayload({ config })
-    const settings = await payload.findGlobal({ slug: 'settings' })
+    const settings = await payload.findGlobal({ slug: 'settings', depth: 1 })
     return {
       themeColor: settings?.themeColor || '#000000',
     }
@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
   try {
     const payload = await getPayload({ config })
-    const settings = await payload.findGlobal({ slug: 'settings' })
+    const settings = await payload.findGlobal({ slug: 'settings', depth: 1 })
 
     const siteName = settings?.siteName || 'Payload Template'
     const defaultTitle = settings?.defaultTitle || siteName
@@ -131,7 +131,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   try {
     const payload = await getPayload({ config })
-    const settings = await payload.findGlobal({ slug: 'settings' })
+    const settings = await payload.findGlobal({ slug: 'settings', depth: 1 })
 
     // Theme colors mapping
     if (settings?.colors) {

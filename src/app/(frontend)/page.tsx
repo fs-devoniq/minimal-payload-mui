@@ -5,6 +5,8 @@ import { PageTemplate } from '@/components/PageTemplate'
 import { Page } from '@/payload-types'
 import { Typography, Container, Box, Button, Link } from '@mui/material'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   if (process.env.PAYLOAD_IGNORE_DATABASE === 'true') {
     return (
@@ -23,12 +25,13 @@ export default async function HomePage() {
   
   const settings = await payload.findGlobal({
     slug: 'settings',
+    depth: 1,
   })
 
-  const homePage = settings.homePage as Page | null
+  const homePage = settings.homePage
 
-  if (homePage) {
-    return <PageTemplate page={homePage} />
+  if (homePage && typeof homePage === 'object') {
+    return <PageTemplate page={homePage as Page} />
   }
 
   // Fallback if no homepage is selected
