@@ -8,6 +8,8 @@ if [ -f "/run/secrets/payload_env" ]; then
     case "$key" in
         '#'*|"") continue ;;
     esac
+    # Trimme führende Leerzeichen beim Key (wegen yaml indentation im secret)
+    key=$(echo "$key" | awk '{$1=$1};1')
     value=$(echo "$value" | sed -e "s/^'//" -e "s/'$//" -e 's/^"//' -e 's/"$//')
     export "$key=$value"
   done < "/run/secrets/payload_env"
@@ -36,7 +38,7 @@ if [ ! -x "$PAYLOAD_CLI" ]; then
   exit 1
 fi
 
-until NODE_OPTIONS=--no-deprecation "$PAYLOAD_CLI" migrate; do
+until NODE_OPTIONS="--no-deprecation --import=tsx/esm" "$PAYLOAD_CLI" migrate; do
   ATTEMPTS=$((ATTEMPTS + 1))
   if [ "$ATTEMPTS" -ge "$MAX_ATTEMPTS" ]; then
     echo "ERROR: Migration failed after ${MAX_ATTEMPTS} attempts."

@@ -11,6 +11,9 @@ permissions:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,6 +27,7 @@ jobs:
           registry: https://ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Get Meta
         id: meta
         run: |
@@ -37,11 +41,12 @@ jobs:
           file: Dockerfile
           target: runner
           push: true
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ steps.meta.outputs.IMAGE_REPO }}:latest
             ${{ steps.meta.outputs.IMAGE_REPO }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          provenance: false
+          generate-release-notes: false
 
       - name: Build and push migrate image
         uses: docker/build-push-action@v5
@@ -50,11 +55,11 @@ jobs:
           file: Dockerfile
           target: migration
           push: true
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
             ${{ steps.meta.outputs.IMAGE_REPO }}:migrate-latest
             ${{ steps.meta.outputs.IMAGE_REPO }}:${{ github.sha }}-migrate
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          provenance: false
 
   deploy:
     runs-on: ubuntu-latest
