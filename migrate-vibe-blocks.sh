@@ -224,24 +224,24 @@ echo -e "🗄️ Erstelle Payload Datenbank-Migration..."
 # Da wir yarn nutzen, rufen wir yarn payload migrate:create auf
 MIGRATION_NAME="vibe_migration"
 # Setze Dummy-Werte für CI/CD Umgebungen, in denen keine .env Datei existiert.
-# Für das Generieren der Migration wird keine echte Datenbank benötigt.
+# Für das Generieren der Migration wird eine Datenbank-Verbindung benötigt.
 PAYLOAD_SECRET="${PAYLOAD_SECRET:-dummy_secret_for_ci_to_bypass_validation}" \
-DATABASE_URL="${DATABASE_URL:-postgres://dummy:dummy@localhost:5432/dummy}" \
+DATABASE_URL="${DATABASE_URL:-${DATABASE_URI:-postgres://dummy:dummy@localhost:5432/dummy}}" \
 yarn payload migrate:create $MIGRATION_NAME
 
 if [ $? -ne 0 ]; then
   echo -e "${C_YELLOW}⚠️ Migration konnte nicht erstellt werden. Bitte manuell prüfen (yarn payload migrate:create).${C_RESET}"
 else
   echo -e "${C_GREEN}✅ Payload CLI erfolgreich ausgeführt.${C_RESET}"
-  
-  # Prüfen, ob es irgendwelche offenen Änderungen gibt (Migrations, Typen, Validator-Fixes)
-  if [[ -n $(git status --porcelain) ]]; then
-    git add .
-    git commit -m "chore: auto-generate migration, update types and apply formatting"
-    echo -e "${C_GREEN}💾 Neue Änderungen (Migration, Typen, Formatting) erkannt und committet.${C_RESET}"
-  else
-    echo -e "${C_YELLOW}ℹ️ Keine offenen Änderungen erkannt.${C_RESET}"
-  fi
+fi
+
+# Prüfen, ob es irgendwelche offenen Änderungen gibt (Migrations, Typen, Validator-Fixes)
+if [[ -n $(git status --porcelain) ]]; then
+  git add .
+  git commit -m "chore: auto-generate migration, update types and apply formatting"
+  echo -e "${C_GREEN}💾 Neue Änderungen (Migration, Typen, Formatting) erkannt und committet.${C_RESET}"
+else
+  echo -e "${C_YELLOW}ℹ️ Keine offenen Änderungen erkannt.${C_RESET}"
 fi
 
 echo -e "\n${C_GREEN}=======================================================${C_RESET}"
