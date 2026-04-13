@@ -28,7 +28,7 @@ Führe diese 4 Aufgaben aus:
      1. Die Datenabfrage in der `page.tsx` mindestens `depth: 2` nutzt (standardmäßig der Fall, aber prüfe es).
      2. Die Media-Kollektion (`src/collections/Media.ts`) korrekt konfiguriert ist (empfohlen: `staticDir: 'public/media'`).
      3. Die `next.config.ts` den Pfad erlaubt (z.B. `/media/**`).
-   - **WICHTIG (MUI & Server Components):** Das `PageTemplate` wird oft serverseitig gerendert. Da MUI-Blöcke interagieren (MUI-Hooks, `sx` Props, `component={Link}`), **stelle sicher, dass die React-Komponente des Blocks in der ersten Zeile `'use client';` enthält!**
+   - **WICHTIG (MUI & Server Components):** Das `PageTemplate` wird serverseitig gerendert. Füge der React-Komponente des Blocks in der ersten Zeile `'use client';` hinzu, **aber nur, wenn es zwingend nötig ist** (z. B. wegen `useState`, `onClick`, `component={Link}` oder Theme-Funktionen im `sx`-Prop). Wenn der Block nur statisches Layout rendert und keine Client-Features nutzt, verzichte darauf, um die Server-Side-Rendering Performance zu optimieren.
    - **WICHTIG:** Übergib das Feld `blockId` als `id`-Prop an die Komponente, sodass es die angegebene ID in Payload rendert.
    - **Wichtig:** Achte darauf, dass Full-Screen-Elemente (wie Hero-Sektionen) nicht durch umschließende Container im Template eingeschränkt werden, damit sie die volle Breite/Höhe einnehmen können.
 

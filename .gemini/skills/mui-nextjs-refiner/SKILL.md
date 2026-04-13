@@ -57,6 +57,10 @@ Führe diese Anpassungen durch:
 
 ### 5. 💻 Client Components ("use client")
 - **Problem:** MUI Komponenten und Props wie `component={NextLink}` oder Funktionen im `sx`-Prop (z.B. `sx={{ bgcolor: theme => theme.palette... }}`) verursachen im Next.js App Router Fehler ("Functions cannot be passed directly to Client Components..."), wenn die umschließende Datei als Server Component gerendert wird.
-- **Lösung:** Setze zwingend `'use client';` in die allererste Zeile der React-Komponente (noch vor den Imports). MUI-Komponenten im App Router müssen in fast allen Fällen als Client Component deklariert werden.
+- **Lösung:** Füge `'use client';` in die erste Zeile der React-Komponente ein, **ABER NUR WENN** es zwingend notwendig ist! Notwendig ist es bei:
+  - Nutzung von React-Hooks (`useState`, `useEffect`, etc.)
+  - Event-Listenern (`onClick`, `onChange`, etc.)
+  - Übergabe von Funktionen oder Referenzen an MUI-Props (z.B. `component={NextLink}`, `sx={{ color: (theme) => ... }}`)
+- Reine Darstellungs-Komponenten ohne diese Eigenschaften sollen Server Components bleiben, um die Performance zu maximieren.
 
 Implementiere den Code direkt im Projekt. Halte dich mit Erklärungen kurz.
