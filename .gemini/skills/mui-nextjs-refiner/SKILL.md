@@ -55,4 +55,8 @@ Führe diese Anpassungen durch:
     <Grid size={{ xs: 12, md: 6 }}>...</Grid>
     ```
 
+### 5. 💻 Client Components ("use client")
+- **Problem:** MUI Komponenten und Props wie `component={NextLink}` oder Funktionen im `sx`-Prop (z.B. `sx={{ bgcolor: theme => theme.palette... }}`) verursachen im Next.js App Router Fehler ("Functions cannot be passed directly to Client Components..."), wenn die umschließende Datei als Server Component gerendert wird.
+- **Lösung:** Setze zwingend `'use client';` in die allererste Zeile der React-Komponente (noch vor den Imports). MUI-Komponenten im App Router müssen in fast allen Fällen als Client Component deklariert werden.
+
 Implementiere den Code direkt im Projekt. Halte dich mit Erklärungen kurz.

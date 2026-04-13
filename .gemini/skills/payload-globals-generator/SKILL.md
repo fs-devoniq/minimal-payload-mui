@@ -20,6 +20,7 @@ Führe exakt diese 4 Schritte aus:
 
 2. **Frontend-Komponente anpassen & Logik migrieren (`src/components/...`):**
    - Passe die React-Komponente so an, dass sie die typisierten Payload-Daten als Props entgegennimmt.
+   - **WICHTIG (Server Components):** Da Header/Footer aus MUI bestehen und interaktiv sind, setze zwingend `'use client';` in die allererste Zeile der Komponente!
    - **Logo rendern:** Die Komponente muss das Logo (entweder als spezifisches Prop oder als übergebenes zentrales `logo` aus den Settings) entgegennehmen und es dort als `<Image />` (aus `next/image`) rendern. Achte auf ordentliche Breiten-/Höhenangaben oder `fill`.
    - **WICHTIG (Logik-Migration):** Suche in der Quell-Datei nach funktionaler Logik, die mit dieser Komponente zusammenhängt (Scroll-Logik, UI-State für Mobile-Menüs, interaktive Hooks) und integriere diese in die neue MUI-Komponente. Nutze moderne Hooks (`useState`, `useEffect`, MUI's `useScrollTrigger`).
 
