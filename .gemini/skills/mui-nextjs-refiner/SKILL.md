@@ -32,7 +32,7 @@ Führe diese Anpassungen durch:
   // ...
   <Link component={NextLink} href="...">
   ```
-- **Bilder:** Falls Standard `<img>` Tags verwendet werden, importiere `import Image from 'next/image';` und passe die Tags an.
+- **Bilder:** Falls Standard `<img>` Tags verwendet werden, importiere `import Image from 'next/image';` und passe die Tags an. **WICHTIG:** Prüfe, ob die Bildquelle in der `next.config.ts` (unter `images.localPatterns` oder `remotePatterns`) erlaubt ist, damit Next.js das Bild laden kann.
 - **Drittanbieter-Bibliotheken:** Wenn die Quell-Komponente Bibliotheken wie `motion/react` (Framer Motion) oder spezifische Next.js Hooks (`useScroll`, `useSpring`) verwendet, behalte diese Imports bei und stelle sicher, dass sie in unserer Zielstruktur korrekt funktionieren.
 
 ### 3. 🆔 Anker-Links (IDs)

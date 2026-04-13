@@ -24,6 +24,10 @@ Führe diese 4 Aufgaben aus:
    - Durchlaufe das Block-Array (z.B. `layout` oder `content`) aus den Payload-Daten.
    - Prüfe den `blockType` und rendere die entsprechende React-Komponente.
    - Übergib die Payload-Daten direkt als Props an die Komponente.
+   - **WICHTIG (Image Loading):** Damit Bilder in Blöcken angezeigt werden, stelle sicher, dass:
+     1. Die Datenabfrage in der `page.tsx` mindestens `depth: 2` nutzt (standardmäßig der Fall, aber prüfe es).
+     2. Die Media-Kollektion (`src/collections/Media.ts`) korrekt konfiguriert ist (empfohlen: `staticDir: 'public/media'`).
+     3. Die `next.config.ts` den Pfad erlaubt (z.B. `/media/**`).
    - **WICHTIG:** Übergib das Feld `blockId` als `id`-Prop an die Komponente, sodass es die angegebene ID in Payload rendert.
    - **Wichtig:** Achte darauf, dass Full-Screen-Elemente (wie Hero-Sektionen) nicht durch umschließende Container im Template eingeschränkt werden, damit sie die volle Breite/Höhe einnehmen können.
 

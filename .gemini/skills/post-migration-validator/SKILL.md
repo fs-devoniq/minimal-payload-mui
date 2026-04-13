@@ -41,5 +41,11 @@ If `tsc` or `eslint` report errors in Step 2 or 3:
 3. Automatically apply fixes using the `replace` tool or by rewriting the file. Common issues include missing imports, incorrect MUI prop types, or missing Payload CMS fields.
 4. Re-run the failing check (e.g., `npx tsc --noEmit`) to confirm the fix.
 
-### Step 5: Final Report
+### Step 5: Verify Image & Data Configuration
+Check for common issues that prevent images from showing:
+1. **Next.js Config:** Ensure `next.config.ts` includes `localPatterns` for `/media/**` or wherever images are served.
+2. **Media Collection:** Check `src/collections/Media.ts` for `staticDir: 'public/media'`.
+3. **Fetching Depth:** Ensure `layout.tsx` or `page.tsx` use `depth: 2` if images are nested in blocks or globals.
+
+### Step 6: Final Report
 Provide a concise, user-friendly summary stating that the codebase has been validated, formatted, and is ready for use. Mention any stubborn errors that could not be automatically fixed.

@@ -30,6 +30,7 @@ Führe exakt diese 4 Schritte aus:
 4. **Next.js Layout Integration (`src/app/(frontend)/layout.tsx`):**
    - Generiere das Code-Snippet für das Root-Layout (oder das relevante Frontend-Layout).
    - Rufe die Daten serverseitig über die Payload Local API ab (`getPayload({ config })`). Hole sowohl das neu erstellte Global (Header/Footer) als AUCH das `Settings`-Global.
+   - **WICHTIG (Depth):** Nutze beim Abruf von `Settings` (falls es die Homepage verlinkt) und Header/Footer mindestens `depth: 2`, damit Bilder innerhalb von Blöcken oder Untermenüs korrekt als Objekt (statt nur ID) geladen werden.
    - Binde die Header/Footer-Komponente ein. Übergib ihr die spezifischen Global-Daten. Wenn die Komponente das Hauptlogo nutzt, übergib ihr das `logo` aus den Settings als Prop.
 
 Implementiere den Code direkt im Projekt und halte dich mit Erklärungen kurz. Sobald du alle Dateien fertiggestellt hast, generiere die passenden Terminal-Befehle, um die Änderungen zu committen (`git add .` und `git commit -m "..."`). 
