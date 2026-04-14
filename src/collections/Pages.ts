@@ -23,9 +23,5 @@ export const Pages: CollectionConfig = {
         position: 'sidebar',
       },
     },
-    {
-      name: 'content',
-      type: 'richText',
-    },
   ],
 }
